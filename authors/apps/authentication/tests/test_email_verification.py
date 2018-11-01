@@ -6,31 +6,27 @@ from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 
+from .basetest import BaseTestCase
 
 User = get_user_model()
 
 
-class UserApiTestCase(APITestCase):
-    def setUp(self):
-        self.signup_data = {
-            "user": {
-                "email": "test@test.com",
-                "username": "testuser",
-                "password": "testpassword#1",
-            }
-        }
-        self.login_data = {
-            "user": {
-                "email": "test@test.com",
-                "password": "testpassword#1",
-            }
-        }
-        url = reverse("authentication:signup")
-        self.client.post(url, self.signup_data, format="json")
+class UserApiTestCase(BaseTestCase):
 
     def test_login_with_unverified_user(self):
+        self.create_user = User(
+            username="jude", email="jude@test.com")
+        self.create_user.set_password("testpassword#123")
+        self.create_user.save()
+        self.login_data_unverified = {
+            "user": {
+                "email": "jude@test.com",
+                "password": "testpassword#123",
+            }
+        }
         url = reverse("authentication:login")
-        response = self.client.post(url, self.login_data, format="json")
+        response = self.client.post(
+            url, self.login_data_unverified, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data, {"errors": {"error": [
             "Your account is not verified, Please check your email to verify your account"
@@ -66,4 +62,3 @@ class UserApiTestCase(APITestCase):
             "message": 'Your account is already verified, Please login.'}
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, response_message)
-
