@@ -10,7 +10,7 @@ class Article(models.Model):
     description = models.TextField(blank=False)
     body = models.TextField(blank=False)
     tag_list = ArrayField(models.CharField(max_length=200), blank=False)
-    created_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     favorited = models.BooleanField(default=False)
     favorites_count = models.IntegerField(default=0)
