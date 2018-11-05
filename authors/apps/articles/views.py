@@ -79,8 +79,28 @@ class ArticleRetrieveUpdateByIdAPIView(generics.RetrieveUpdateAPIView):
         if Article.objects.filter(slug=slug).exists():
             slug += str(time.time()).replace('.', '')
 
+<<<<<<< HEAD
         author_id, author_username = get_id_from_token(request)
         validate_author(author_id, article.author.id)
+=======
+<<<<<<< HEAD
+        token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
+        payload = jwt.decode(token, settings.SECRET_KEY, 'utf-8')
+        author_id = payload['id']
+=======
+        author_id = None
+        try:
+            token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
+            payload = jwt.decode(token, settings.SECRET_KEY, 'utf-8')
+            author_id = payload['id']
+        except Exception:
+            raise APIException({"error": "Login Token required"})
+>>>>>>> feat (edit article): Edit a specific article
+
+        if author_id != article.author.id:
+            raise APIException(
+                {"error": "You do not have permission to edit this Article"})
+>>>>>>> feat (edit article): Edit a specific article
 
         fresh_article_data = {
             "slug": slug,
