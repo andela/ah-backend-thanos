@@ -33,14 +33,14 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-
     path('api/', include(('authors.apps.authentication.urls',
-                          'authors.apps.authentication'), namespace='authentication')),
+                          'authors.apps.authentication'),
+                         namespace='authentication')),
     path('', schema_view.with_ui('swagger', cache_timeout=0),
          name='schema-swagger-ui'),
     path('api/articles', include(('authors.apps.articles.urls',
-                                  'authors.apps.articles'), namespace='articles')),
+                                  'authors.apps.articles'),
+                                 namespace='articles')),
     path('', include(('authors.apps.profiles.urls',
                       'authors.apps.profiles'), namespace='profiles')),
-
 ]

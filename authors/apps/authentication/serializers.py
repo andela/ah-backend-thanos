@@ -13,7 +13,8 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     # Ensure passwords are at least 8 characters long, no longer than 128
     # characters, and can not be read by the client.
-    password = serializers.CharField(max_length=128, min_length=8, write_only=True)
+    password = serializers.CharField(
+        max_length=128, min_length=8, write_only=True)
 
     # The client should not be able to send a token along with a registration
     # request. Making `token` read-only handles that for us.
@@ -74,12 +75,14 @@ class LoginSerializer(serializers.Serializer):
         # As mentioned above, an email is required. Raise an exception if an
         # email is not provided.
         if email is None:
-            raise serializers.ValidationError('An email address is required to log in.')
+            raise serializers.ValidationError(
+                'An email address is required to log in.')
 
         # As mentioned above, a password is required. Raise an exception if a
         # password is not provided.
         if password is None:
-            raise serializers.ValidationError('A password is required to log in.')
+            raise serializers.ValidationError(
+                'A password is required to log in.')
 
         # The `authenticate` method is provided by Django and handles checking
         # for a user that matches this email/password combination. Notice how
@@ -99,7 +102,8 @@ class LoginSerializer(serializers.Serializer):
         # or otherwise deactivated. This will almost never be the case, but
         # it is worth checking for. Raise an exception in this case.
         if not user.is_active:
-            raise serializers.ValidationError('This user has been deactivated.')
+            raise serializers.ValidationError(
+                'This user has been deactivated.')
 
         if not user.is_verified:
             raise serializers.ValidationError(
@@ -123,7 +127,8 @@ class UserSerializer(serializers.ModelSerializer):
     # characters. These values are the default provided by Django. We could
     # change them, but that would create extra work while introducing no real
     # benefit, so let's just stick with the defaults.
-    password = serializers.CharField(max_length=128, min_length=8, write_only=True)
+    password = serializers.CharField(
+        max_length=128, min_length=8, write_only=True)
 
     class Meta:
         model = User
@@ -164,3 +169,18 @@ class UserSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+
+class UpdatePasswordSerializer(serializers.Serializer):
+    """
+    Serializer for password change endpoint.
+    """
+    new_password = serializers.CharField(required=True)
+    confirm_password = serializers.CharField(required=True)
+
+
+class SendPasswordResetEmailSerializer(serializers.Serializer):
+    """
+    Serializer for password change endpoint to send email.
+    """
+    email = serializers.CharField(max_length=255)

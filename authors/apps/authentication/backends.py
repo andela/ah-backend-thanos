@@ -3,8 +3,9 @@ import jwt
 from django.conf import settings
 
 from rest_framework import authentication, exceptions
+from rest_framework.exceptions import APIException
 
-from .models import User
+from authors.apps.authentication.models import User
 
 
 class JWTAuthentication(authentication.BaseAuthentication):
@@ -41,7 +42,7 @@ class JWTAuthentication(authentication.BaseAuthentication):
         try:
             payload = jwt.decode(token, settings.SECRET_KEY)
         except:
-            raise exceptions.AuthenticationFailed('Invalid/expired token')
+            raise APIException({"error": "Invalid/expired token"})
 
         user = User.objects.get(pk=payload['id'])
         if not user.is_active:

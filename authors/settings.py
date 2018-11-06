@@ -32,10 +32,11 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 EMAIL_USE_TLS = True
+TESTING = config('TESTING', default=True, cast=bool)
 
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='.herokuapp.com', cast=Csv())
-
+SEND_GRID_API_KEY = config('SEND_GRID_API_KEY')
 # Application definition
 
 INSTALLED_APPS = [
