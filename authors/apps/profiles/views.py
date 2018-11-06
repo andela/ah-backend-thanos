@@ -36,7 +36,7 @@ class ProfileRetrieveUpdateAPIView(GenericAPIView):
         serializer_data = request.data.get('profiles', {})
         user = get_object_or_404(User, username=username)
         try:
-            user_id, username = get_id_from_token(request)
+            user_id, username, = get_id_from_token(request)
             if user.username != username:
                 raise UserCannotEditProfile
         except Exception:

@@ -78,6 +78,30 @@ class BaseTest(APITestCase):
                 "thread_body": "This is a thread comment"
             }
         }
+        self.user2_signup_data = {
+            "user": {
+                "email": "josekizito@gmail.com",
+                "username": "josekizito",
+                "password": "josekizito#1",
+            }
+
+        }
+        self.user2_login_data = {
+            "user": {
+                "email": "josekizito@gmail.com",
+                "password": "josekizito#1",
+            }
+
+        }
+
+        # article rating
+        self.article_score = {
+            "rating": 5
+        }
+
+        self.out_of_range = {
+            "rating": 6
+        }
 
         self.response = self.client.post(
             signup_url, self.signup_data, format="json")

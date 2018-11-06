@@ -7,19 +7,24 @@ from rest_framework import generics
 from rest_framework import permissions
 from rest_framework.response import Response
 
-from .models import Article, Comment, Thread, LikeArticle
+from .models import Article, Comment, Thread, LikeArticle, Rating
 from .renderers import (ArticleRenderer, CommentRenderer, ThreadRenderer,
-                        LikeStatusRenderer)
+                        LikeStatusRenderer, RatingRenderer)
 from .serializers import (ArticleSerializer, ArticlesUpdateSerializer,
                           CommentSerializer, ThreadCreateSerializer,
-                          LikeSerializer, LikeStatusUpdateSerializer)
+                          LikeSerializer, LikeStatusUpdateSerializer,
+                          RatingSerializer)
 from rest_framework.exceptions import (NotAcceptable, NotFound,
                                        ParseError,)
+from rest_framework.exceptions import NotFound
+
+
 from authors.apps.core.utils.generate_slug import generate_slug
 from authors.apps.core.utils.user_management import (
     get_id_from_token,
     validate_author
 )
+from rest_framework.exceptions import (ParseError,)
 
 
 class ArticlesListCreateAPIView(generics.ListCreateAPIView):
@@ -93,7 +98,7 @@ class ArticleRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         if Article.objects.filter(slug=slug).exists():
             slug += str(time.time()).replace('.', '')
 
-        author_id, author_username = get_id_from_token(request)
+        author_id, author_username, = get_id_from_token(request)
         validate_author(author_id, article.author.id)
 
         fresh_article_data = {
@@ -116,7 +121,7 @@ class ArticleRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         if not Article.objects.filter(pk=kwargs['pk']).exists():
             raise NotFound(detail="Article Not found",)
         article = Article.objects.get(pk=kwargs['pk'])
-        author_id, username = get_id_from_token(request)
+        author_id, username, = get_id_from_token(request)
         validate_author(author_id, article.author.id)
         self.perform_destroy(article)
         return Response({"messge": "Article deleted sucessfully"},
@@ -296,3 +301,43 @@ class UpdateLikeStatusAPIView(generics.RetrieveUpdateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.update(current_like_status, new_like_status)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ArticleRating(generics.ListCreateAPIView):
+    """
+    post: rate an article
+    """
+    queryset = Rating.objects.all()
+    serializer_class = RatingSerializer
+    renderer_classes = (RatingRenderer,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    lookup_field = 'pk'
+
+    def create(self, request, *args, **kwargs):
+        article_id = kwargs['pk']
+        rating = request.data.get('rating')
+        if rating > 5 or rating < 0:
+            raise ParseError(
+                detail="Score value must not go below `0` and not go beyond `5`")
+
+        reader, author_username, = get_id_from_token(request)
+
+        article = Article.objects.get(pk=article_id)
+        article_author = article.author.id
+
+        if int(article_author) == int(reader):
+            raise ParseError(detail="You can't rate your article")
+
+        if Rating.objects.filter(
+                reader=reader).filter(article=article.id).exists():
+            raise ParseError(detail="You already rated this article")
+
+        rating = {
+            "article": article.id,
+            "rating": rating,
+            "reader": reader
+        }
+        serializer = self.serializer_class(data=rating)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
