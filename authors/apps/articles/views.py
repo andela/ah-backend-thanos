@@ -1,16 +1,17 @@
 import re
 import time
 import jwt
-from django.conf import settings
 
-from rest_framework import status, generics, permissions
+from django.conf import settings
+from rest_framework import status
+from rest_framework import generics
+from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.exceptions import APIException
 
 from .models import Article
 from .renderers import ArticleRenderer
 from .serializers import ArticleSerializer
-from authors.apps.authentication.models import User
 
 
 class ArticlesListCreateAPIView(generics.ListCreateAPIView):
@@ -48,7 +49,6 @@ class ArticlesListCreateAPIView(generics.ListCreateAPIView):
             elif i == ' ':
                 slug += '-'
 
-        # Add a timestamp if the slag alread exists
         if Article.objects.filter(slug=slug).exists():
             slug += str(time.time()).replace('.', '')
 
