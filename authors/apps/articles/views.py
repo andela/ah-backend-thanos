@@ -2,12 +2,11 @@ import re
 import time
 import jwt
 from django.conf import settings
-from rest_framework import status
-from rest_framework import generics
-from rest_framework import permissions
-from authors.apps.authentication.backends import JWTAuthentication
+
+from rest_framework import status, generics, permissions
 from rest_framework.response import Response
 from rest_framework.exceptions import APIException
+
 from .models import Article
 from .renderers import ArticleRenderer
 from .serializers import ArticleSerializer
@@ -37,10 +36,11 @@ class ArticlesListCreateAPIView(generics.ListCreateAPIView):
             author = payload['id']
         except Exception as exception:
             raise APIException({
-                "error": "Login Token required. System Error Response: " + str(exception)
+                "error": "Login Token required. System Error Response: " +
+                str(exception)
                 })
 
-        # create a slug from the title (allowing only alphanumeric values and dashes for spaces)
+        # slug: Allow only alphanumeric values and dashes for spaces
         slug = ''
         for i in re.split(r'(.)', title.strip().lower()):
             if i.isalnum():
@@ -48,7 +48,7 @@ class ArticlesListCreateAPIView(generics.ListCreateAPIView):
             elif i == ' ':
                 slug += '-'
 
-        # make sure slug is unique by adding a timestamp if the slag alread exists
+        # Add a timestamp if the slag alread exists
         if Article.objects.filter(slug=slug).exists():
             slug += str(time.time()).replace('.', '')
 
@@ -66,3 +66,25 @@ class ArticlesListCreateAPIView(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class ArticleRetrieveByIdAPIView(generics.RetrieveAPIView):
+    """
+    get: Retrieve a specific Article by id
+    """
+    queryset = Article.objects.all()
+    serializer_class = ArticleSerializer
+    renderer_classes = (ArticleRenderer,)
+    permission_classes = (permissions.AllowAny,)
+    lookup_field = 'pk'
+
+
+class ArticleRetrieveBySlugAPIView(generics.RetrieveAPIView):
+    """
+    get: Retrieve a specific Article by slug
+    """
+    queryset = Article.objects.all()
+    serializer_class = ArticleSerializer
+    renderer_classes = (ArticleRenderer,)
+    permission_classes = (permissions.AllowAny,)
+    lookup_field = 'slug'

@@ -15,7 +15,8 @@ class ArticleSerializer(serializers.ModelSerializer):
         '''
         Show author's actual details instead of author's id
         '''
-        article_details = super(ArticleSerializer, self).to_representation(data)
+        article_details = super(ArticleSerializer,
+                                self).to_representation(data)
         if User.objects.filter(pk=int(article_details["author"])).exists():
             user_details = User.objects.get(pk=int(article_details["author"]))
             article_details["author"] = {
