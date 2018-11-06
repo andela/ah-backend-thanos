@@ -42,4 +42,6 @@ urlpatterns = [
                          namespace='articles')),
     path('', include(('authors.apps.profiles.urls',
                       'authors.apps.profiles'), namespace='profiles')),
+    path('oauth/', include(('social_django.urls', 'social_django'),
+                           namespace='social'))
 ]
