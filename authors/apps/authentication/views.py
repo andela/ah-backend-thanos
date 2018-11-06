@@ -184,7 +184,6 @@ class ResetPassword(generics.GenericAPIView):
         new_password = request.data.get('new_password')
         confirm_password = request.data.get('confirm_password')
 
-        print(new_password, confirm_password)
         if (new_password != confirm_password):
             # to override Django's built-in validation errors
             raise serializers.ValidationError("The passwords do not match",

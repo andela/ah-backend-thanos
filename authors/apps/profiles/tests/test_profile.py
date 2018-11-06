@@ -136,7 +136,7 @@ class ProfileApiTestCase(APITestCase):
     def test_validate_profile(self):
         """Test whether profile is validated"""
         with self.assertRaises(ValidationError):
-            is_profile_valid(self, last_name='!@##$',
+            is_profile_valid(self, last_name='!@###$',
                              bio='!@###$', first_name='!@@#')
 
     def test_profile_update(self):

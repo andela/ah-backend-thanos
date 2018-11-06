@@ -12,7 +12,6 @@ login_url = reverse("authentication:login")
 class UserApiTestCase(BaseTestCase):
 
     def test_login_user(self):
-
         # Test user login
         self.login_response = self.client.post(
             login_url, self.login_data, format="json")
@@ -25,7 +24,7 @@ class UserApiTestCase(BaseTestCase):
         )
 
     def test_get_user_email(self):
-        self.user = self.login_data["user"]["email"]
         """ Test model method to get user's email """
-        email = self.user.__str__()
+        self.email = self.login_data["user"]["email"]
+        email = self.email.__str__()
         self.assertIn(email, "daniel@test.com")
