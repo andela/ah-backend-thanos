@@ -1,4 +1,3 @@
-import re
 from rest_framework import serializers
 from rest_framework.exceptions import APIException
 from .models import Article
@@ -39,3 +38,10 @@ class ArticleSerializer(serializers.ModelSerializer):
         for tag in tag_list:
             validator.starts_with_letter("tag", tag)
         return data
+
+
+class ArticlesUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Article
+        fields = ['slug', 'title', 'description', 'body',
+                  'tag_list', 'image_url', 'audio_url']

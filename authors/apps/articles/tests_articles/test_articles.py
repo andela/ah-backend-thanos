@@ -4,7 +4,7 @@ from rest_framework.reverse import reverse
 
 from django.contrib.auth import get_user_model
 from django.utils.encoding import force_text
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.http import urlsafe_base64_encode
 from django.contrib.auth.tokens import default_token_generator
 
 from authors.apps.articles.models import Article
@@ -24,6 +24,9 @@ class ArticleTests(APITestCase):
             "body": "It takes a Jacobian",
             "image_url": "http://iviidev.info/downloads/image.jpg",
             "tag_list": ["dragons", "fantacy"]
+        }
+        self.edit_data = {
+            "title": "This title has been edited",
         }
         self.article_with_bad_title = {
             "title": "1",
@@ -116,3 +119,18 @@ class ArticleTests(APITestCase):
                                     self.article_with_missing_fields,
                                     format='json')
         self.assertIn("This field may not be null", str(response.data))
+
+    def test_edit_article(self):
+        self.test_create_article()
+        article = Article.objects.all().first()
+        response = self.client.put("/api/articles/{}".format(article.pk),
+                                   self.edit_data,
+                                   format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("This title has been edited", str(response.data))
+
+    def test_invalid_token(self):
+        # set a wrong token and try to use it to create an article
+        self.client.credentials(HTTP_AUTHORIZATION='Token VERY-WRONG-TOKEN')
+        response = self.client.post(articles_url, self.data, format='json')
+        self.assertIn("Invalid/expired token", str(response.data))
