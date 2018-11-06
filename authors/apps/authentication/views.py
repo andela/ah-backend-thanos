@@ -1,10 +1,8 @@
 from rest_framework import status
-from django.core.mail import send_mail
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework import serializers
 from rest_framework import generics
-from rest_framework.exceptions import APIException
-from rest_framework.views import APIView
 from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
@@ -17,7 +15,7 @@ import re
 
 from .renderers import UserJSONRenderer
 from .serializers import (
-    LoginSerializer, RegistrationSerializer, UserSerializer,
+    LoginSerializer, RegistrationSerializer,
     UpdatePasswordSerializer,
     SendPasswordResetEmailSerializer
 )
@@ -148,8 +146,9 @@ class SendEmailPasswordReset(generics.CreateAPIView):
     def post(self, request):
         email = request.data.get('email')
         if not User.objects.filter(email=email).exists():
-            raise APIException(
-                {"error": "User with that email does not exist"})
+            raise serializers.ValidationError(
+                "User with that email does not exist",
+                code=400)
         dt = datetime.now()+timedelta(days=1)
         reset_password_token = jwt.encode({'email': email, 'exp': int(
             dt.strftime('%s'))}, settings.SECRET_KEY, 'HS256').decode('utf-8')
@@ -179,14 +178,17 @@ class ResetPassword(generics.GenericAPIView):
 
         print(new_password, confirm_password)
         if (new_password != confirm_password):
-            raise APIException({"error": "The passwords do not match"})
+            # to override Django's built-in validation errors
+            raise serializers.ValidationError("The passwords do not match",
+                                              code=400)
         elif (
             re.compile(
                 r'^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,}$'
             ).search(new_password)
                 is None):
-            raise APIException({"error":
-                                "Ensure your password is alphanumeric, with Minimum eight characters, at least one letter, one number and one special character"}
+            raise serializers.ValidationError(
+                                "Ensure your password is alphanumeric, with Minimum eight characters, at least one letter, one number and one special character",
+                                code=400
                                )
         print(new_password, confirm_password)
         decode_token = jwt.decode(
@@ -195,5 +197,5 @@ class ResetPassword(generics.GenericAPIView):
         user.set_password(new_password)
         user.save()
         return Response({'message':
-                         'your has successfully changed your password'},
-                        status=status.HTTP_201_CREATED)
+                         'you have successfully changed your password'},
+                        status=status.HTTP_200_OK)

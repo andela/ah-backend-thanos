@@ -1,6 +1,6 @@
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import AuthenticationFailed
 
 
-class UserCannotEditProfile(APIException):
+class UserCannotEditProfile(AuthenticationFailed):
     status_code = 403
-    default_detail = "Sorry, you cannot edit another users profile "
+    default_detail = "Sorry, you cannot edit another users profile"

@@ -1,5 +1,5 @@
 import re
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import NotAcceptable
 
 
 class Validator():
@@ -8,6 +8,7 @@ class Validator():
         if re.compile("[a-zA-Z]+").match(value):
             return value
         else:
-            raise APIException({
-                "error": field + " Must start with a letter"
-                })
+            raise NotAcceptable(
+                detail=field + " Must start with a letter",
+                code=406
+                )

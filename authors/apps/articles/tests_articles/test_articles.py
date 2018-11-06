@@ -119,6 +119,7 @@ class ArticleTests(APITestCase):
                                     self.article_with_missing_fields,
                                     format='json')
         self.assertIn("This field may not be null", str(response.data))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_edit_article(self):
         self.test_create_article()
@@ -140,3 +141,12 @@ class ArticleTests(APITestCase):
                                    self.edit_data,
                                    format='json')
         self.assertIn("Article Not found", str(response.data))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_article(self):
+        self.test_create_article()
+        article = Article.objects.all().first()
+        response = self.client.delete("/api/articles/{}".format(article.pk),
+                                      format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("Article deleted sucessfully", str(response.data))

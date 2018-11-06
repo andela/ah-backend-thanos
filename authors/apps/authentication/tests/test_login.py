@@ -1,8 +1,6 @@
-from rest_framework import status, exceptions
+from rest_framework import status
 from django.contrib.auth import get_user_model
 from rest_framework.reverse import reverse
-
-from ..backends import JWTAuthentication
 
 from .basetest import BaseTestCase
 
@@ -30,4 +28,4 @@ class UserApiTestCase(BaseTestCase):
         self.user = self.login_data["user"]["email"]
         """ Test model method to get user's email """
         email = self.user.__str__()
-        self.assertEqual(email, "daniel@test.com")
+        self.assertIn(email, "daniel@test.com")

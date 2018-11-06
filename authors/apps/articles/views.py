@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework import generics
 from rest_framework import permissions
 from rest_framework.response import Response
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import NotFound
 
 from .models import Article
 from .renderers import ArticleRenderer
@@ -58,10 +58,11 @@ class ArticlesListCreateAPIView(generics.ListCreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class ArticleRetrieveUpdateByIdAPIView(generics.RetrieveUpdateAPIView):
+class ArticleRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     """
     get: Retrieve a specific Article by id
     put: Update Article by id
+    delete: Delete Article by id
     """
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
@@ -71,7 +72,7 @@ class ArticleRetrieveUpdateByIdAPIView(generics.RetrieveUpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         if not Article.objects.filter(pk=kwargs['pk']).exists():
-            raise APIException({"error": "Article Not found"})
+            raise NotFound(detail="Article Not found", code=404)
         article = Article.objects.get(pk=kwargs['pk'])
 
         title = request.data.get('title', article.title)
@@ -79,28 +80,8 @@ class ArticleRetrieveUpdateByIdAPIView(generics.RetrieveUpdateAPIView):
         if Article.objects.filter(slug=slug).exists():
             slug += str(time.time()).replace('.', '')
 
-<<<<<<< HEAD
         author_id, author_username = get_id_from_token(request)
         validate_author(author_id, article.author.id)
-=======
-<<<<<<< HEAD
-        token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
-        payload = jwt.decode(token, settings.SECRET_KEY, 'utf-8')
-        author_id = payload['id']
-=======
-        author_id = None
-        try:
-            token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
-            payload = jwt.decode(token, settings.SECRET_KEY, 'utf-8')
-            author_id = payload['id']
-        except Exception:
-            raise APIException({"error": "Login Token required"})
->>>>>>> feat (edit article): Edit a specific article
-
-        if author_id != article.author.id:
-            raise APIException(
-                {"error": "You do not have permission to edit this Article"})
->>>>>>> feat (edit article): Edit a specific article
 
         fresh_article_data = {
             "slug": slug,
@@ -117,6 +98,16 @@ class ArticleRetrieveUpdateByIdAPIView(generics.RetrieveUpdateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.update(article, fresh_article_data)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def destroy(self, request, *args, **kwargs):
+        if not Article.objects.filter(pk=kwargs['pk']).exists():
+            raise NotFound(detail="Article Not found", code=404)
+        article = Article.objects.get(pk=kwargs['pk'])
+        author_id, username = get_id_from_token(request)
+        validate_author(author_id, article.author.id)
+        self.perform_destroy(article)
+        return Response({"messge": "Article deleted sucessfully"},
+                        status=status.HTTP_200_OK)
 
 
 class ArticleRetrieveBySlugAPIView(generics.RetrieveAPIView):
