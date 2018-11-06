@@ -37,3 +37,19 @@ class Thread (TimeStampedModel):
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE)
     thread_body = models.TextField(blank=False)
     author = models.ForeignKey(Profile, on_delete=models.CASCADE)
+
+
+class LikeArticle(models.Model):
+    LIKE = 'like'
+    DISLIKE = 'dislike'
+    LIKE_CHOICES = (
+        (LIKE, 'like'),
+        (DISLIKE, 'dislike'),)
+    article = models.ForeignKey(Article, on_delete=models.CASCADE)
+    article_title = models.CharField(max_length=255)
+    like_status = models.CharField(max_length=10,
+                                   choices=LIKE_CHOICES)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.like_status
