@@ -1,7 +1,5 @@
 import time
-import jwt
 
-from django.conf import settings
 from rest_framework import status
 from rest_framework import generics
 from rest_framework import permissions
@@ -13,6 +11,10 @@ from .renderers import ArticleRenderer
 from .serializers import ArticleSerializer, ArticlesUpdateSerializer
 
 from authors.apps.core.utils.generate_slug import generate_slug
+from authors.apps.core.utils.user_management import (
+    get_id_from_token,
+    validate_author
+)
 
 
 class ArticlesListCreateAPIView(generics.ListCreateAPIView):
@@ -33,9 +35,7 @@ class ArticlesListCreateAPIView(generics.ListCreateAPIView):
         image_url = request.data.get('image_url')
         audio_url = request.data.get('audio_url')
 
-        token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
-        payload = jwt.decode(token, settings.SECRET_KEY, 'utf-8')
-        author = payload['id']
+        author_id, author_username = get_id_from_token(request)
 
         # Add a timestamp if the slag alread exists
         slug = generate_slug(title)
@@ -49,7 +49,7 @@ class ArticlesListCreateAPIView(generics.ListCreateAPIView):
             "body": body,
             "tag_list": tag_list,
             "image_url": image_url,
-            "author": author,
+            "author": author_id,
             "audio_url": audio_url
         }
         serializer = self.serializer_class(data=article)
@@ -79,13 +79,8 @@ class ArticleRetrieveUpdateByIdAPIView(generics.RetrieveUpdateAPIView):
         if Article.objects.filter(slug=slug).exists():
             slug += str(time.time()).replace('.', '')
 
-        token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
-        payload = jwt.decode(token, settings.SECRET_KEY, 'utf-8')
-        author_id = payload['id']
-
-        if author_id != article.author.id:
-            raise APIException(
-                {"error": "You do not have permission to edit this Article"})
+        author_id, author_username = get_id_from_token(request)
+        validate_author(author_id, article.author.id)
 
         fresh_article_data = {
             "slug": slug,

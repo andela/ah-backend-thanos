@@ -1,7 +1,4 @@
-import jwt
-
 from django.shortcuts import get_object_or_404
-from django.conf import settings
 
 from rest_framework import status
 from rest_framework.generics import GenericAPIView, ListAPIView
@@ -13,6 +10,8 @@ from .models import Profile, User
 from .serializers import ProfileSerializer
 from .renderers import ProfileJSONRenderer
 from .exceptions import UserCannotEditProfile
+
+from authors.apps.core.utils.user_management import get_id_from_token
 
 
 class ProfileRetrieveUpdateAPIView(GenericAPIView):
@@ -37,9 +36,7 @@ class ProfileRetrieveUpdateAPIView(GenericAPIView):
         serializer_data = request.data.get('profiles', {})
         user = get_object_or_404(User, username=username)
         try:
-            token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
-            payload = jwt.decode(token, settings.SECRET_KEY, 'utf-8')
-            username = payload['username']
+            user_id, username = get_id_from_token(request)
             if user.username != username:
                 raise UserCannotEditProfile
         except Exception:
