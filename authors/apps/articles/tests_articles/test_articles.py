@@ -134,3 +134,9 @@ class ArticleTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token VERY-WRONG-TOKEN')
         response = self.client.post(articles_url, self.data, format='json')
         self.assertIn("Invalid/expired token", str(response.data))
+
+    def test_article_not_found(self):
+        response = self.client.put("/api/articles/1",
+                                   self.edit_data,
+                                   format='json')
+        self.assertIn("Article Not found", str(response.data))
