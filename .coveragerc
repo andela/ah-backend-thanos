@@ -17,5 +17,5 @@ omit =
     */wsgi.py
     */.vscode/*
     */tests/*
-    */manage.py/*
-    
+    */manage.py/*    
+    */serializers/*

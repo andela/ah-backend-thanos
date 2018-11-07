@@ -1,6 +1,5 @@
 from django.db import models
 
-
 from authors.apps.authentication.models import User
 from authors.apps.core.models import TimeStampedModel
 
@@ -14,5 +13,7 @@ class Profile(TimeStampedModel):
     last_name = models.TextField(blank=True)
 
 
-
-    
+class Follow(models.Model):
+    follower = models.ForeignKey(User, on_delete=models.CASCADE,
+                                 related_name="follow_user_a")
+    followee = models.ForeignKey(User, on_delete=models.CASCADE)

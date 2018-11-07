@@ -66,6 +66,7 @@ class ArticleTests(BaseTest):
                                     self.article_with_bad_title,
                                     format='json')
         self.assertIn("Must start with a letter", str(response.data))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_article_missing_fields(self):
         """
@@ -91,6 +92,7 @@ class ArticleTests(BaseTest):
         self.client.credentials(HTTP_AUTHORIZATION='Token VERY-WRONG-TOKEN')
         response = self.client.post(articles_url, self.data, format='json')
         self.assertIn("Invalid/expired token", str(response.data))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_article_not_found(self):
         response = self.client.put("/api/articles/2",
@@ -127,14 +129,14 @@ class ArticleTests(BaseTest):
 
     def test_invalid_page_number(self):
         self.test_create_article()
-        articles_url = '/api/articles/?page=3'
+        articles_url = '/api/articles?page=3'
         response = self.client.get(articles_url, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_valid_page_number(self):
         self.test_create_article()
-        articles_url = '/api/articles/?page=1'
+        articles_url = '/api/articles?page=1'
         self.client.get(articles_url, format='json')
 
     def test_like_article(self):

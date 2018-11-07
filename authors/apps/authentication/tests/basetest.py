@@ -119,9 +119,7 @@ class BaseTestCase(APITestCase):
         dt = datetime.now()+timedelta(days=1)
         self.reset_password_token = jwt.encode({'email': email, 'exp': int(
             dt.strftime('%s'))}, settings.SECRET_KEY, 'HS256').decode('utf-8')
-
         self.url_reset_password = "/api/user/reset_password/{}".format(
             self.reset_password_token)
-
         self.reset_password_send_email_data = {"email": "daniel@test.com"}
         self.reset_password_wrong_email_data = {"email": "judesg@gmail.com"}

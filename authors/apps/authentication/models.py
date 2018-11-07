@@ -72,9 +72,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     # but we can still analyze the data.
     is_active = models.BooleanField(default=True)
 
-    # An Email with an Activation link is sent to a user upon registration.
-    # When a user clicks on that link, it activates his/her
-    # setting the `is_verified` to true.
+    # An Email with an Activation link is sent to a
+    # user upon succesfull registration.
+    # When a user clicks on that link, it activates
+    # his/her setting the `is_verified` to true.
     is_verified = models.BooleanField(default=False)
 
     # The `is_staff` flag is expected by Django to determine who can and cannot
@@ -87,8 +88,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     # A timestamp reprensenting when this object was last updated.
     updated_at = models.DateTimeField(auto_now=True)
-
-    # More fields required by Django when specifying a custom user model.
 
     # The `USERNAME_FIELD` property tells us which field we will use to log in.
     # In this case, we want that to be the email field.
@@ -142,8 +141,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def token(self):
         """
-        This function allows us to generate the
-        user token as `user.token` through
-        calling the token as a "dynamic property" when we add the `@property`
+        This function allows us to generate the user token as `user.token`
+        through calling the token as a "dynamic property" when
+        we add the `@property`
         """
         return self._generate_jwt_token()

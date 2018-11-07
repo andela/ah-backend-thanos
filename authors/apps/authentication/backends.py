@@ -36,9 +36,8 @@ class JWTAuthentication(authentication.BaseAuthentication):
         try:
             payload = jwt.decode(token, settings.SECRET_KEY)
         except Exception:
-            # 401 = Unauthenticated
             raise AuthenticationFailed(detail="Invalid/expired token",
-                                       code=401)
+                                       code=403)
 
         user = User.objects.get(pk=payload['id'])
         # No endpoint that deactivates a user for now
