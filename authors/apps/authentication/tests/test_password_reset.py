@@ -1,9 +1,7 @@
-
 from django.contrib.auth import get_user_model
 from rest_framework.reverse import reverse
 from .basetest import BaseTestCase
 from rest_framework import status
-import jwt
 
 User = get_user_model()
 signup_url = reverse("authentication:signup")
@@ -18,11 +16,10 @@ class UserApiTestCase(BaseTestCase):
         # password reset
         response_reset_password = self.client.put(
             self.url_reset_password, self.reset_password_data, format="json")
-        self.assertEqual(
-            response_reset_password.data, {
-                "message": "your has successfully changed your password"
-            }
-        )
+        self.assertIn("you have successfully changed your password",
+                      str(response_reset_password.data))
+        self.assertEqual(response_reset_password.status_code,
+                         status.HTTP_200_OK)
 
     def test_password_reset_send_email(self):
 
@@ -41,8 +38,10 @@ class UserApiTestCase(BaseTestCase):
             url_password_reset_email,
             self.reset_password_wrong_email_data,
             format="json")
-        self.assertEqual(response_reset_password_wrong_data.data,
-                         {"error": "User with that email does not exist"})
+        self.assertIn("User with that email does not exist",
+                      str(response_reset_password_wrong_data.data))
+        self.assertEqual(response_reset_password_wrong_data.status_code,
+                         status.HTTP_400_BAD_REQUEST)
 
     def test_password_reset_donot_match(self):
 
@@ -51,11 +50,11 @@ class UserApiTestCase(BaseTestCase):
             self.url_reset_password,
             self.reset_password_unmatching_data,
             format="json")
-        self.assertEqual(
-            response_reset_password.data, {
-                "error": "The passwords do not match"
-            }
+        self.assertIn(
+            "The passwords do not match", str(response_reset_password.data)
         )
+        self.assertEqual(response_reset_password.status_code,
+                         status.HTTP_400_BAD_REQUEST)
 
     def test_password_reset_invalid_data(self):
 
@@ -64,8 +63,9 @@ class UserApiTestCase(BaseTestCase):
             self.url_reset_password,
             self.reset_password_unvalid_data,
             format="json")
-        self.assertEqual(
-            response_reset_password.data, {
-                "error": "Ensure your password is alphanumeric, with Minimum eight characters, at least one letter, one number and one special character"
-            }
+        self.assertIn(
+            "Ensure your password is alphanumeric, with Minimum eight characters, at least one letter, one number and one special character",
+            str(response_reset_password.data)
         )
+        self.assertEqual(response_reset_password.status_code,
+                         status.HTTP_400_BAD_REQUEST)

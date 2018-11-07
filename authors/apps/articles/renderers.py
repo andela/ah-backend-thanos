@@ -1,7 +1,7 @@
 import json
 from rest_framework.renderers import JSONRenderer
 from .models import Article
-from rest_framework.utils.serializer_helpers import ReturnList, ReturnDict
+from rest_framework.utils.serializer_helpers import ReturnList
 
 
 class ArticleRenderer(JSONRenderer):

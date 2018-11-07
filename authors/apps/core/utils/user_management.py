@@ -1,7 +1,7 @@
 import jwt
 
 from django.conf import settings
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import AuthenticationFailed
 
 
 def get_id_from_token(request):
@@ -12,5 +12,7 @@ def get_id_from_token(request):
 
 def validate_author(current_user_id, author_id):
     if current_user_id != author_id:
-        raise APIException(
-            {"error": "You do not have permission to edit this Article"})
+        raise AuthenticationFailed(
+            detail="You do not have permission to edit this Article",
+            code=403
+        )

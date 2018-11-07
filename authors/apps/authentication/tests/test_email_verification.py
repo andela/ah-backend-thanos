@@ -1,9 +1,8 @@
-from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from rest_framework.reverse import reverse
 from django.utils.encoding import force_text
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.http import urlsafe_base64_encode
 from django.contrib.auth.tokens import default_token_generator
 
 from .basetest import BaseTestCase
@@ -28,10 +27,8 @@ class UserApiTestCase(BaseTestCase):
         response = self.client.post(
             url, self.login_data_unverified, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, {"errors": {"error": [
-            "Your account is not verified, Please check your email to verify your account"
-        ]
-        }})
+        self.assertIn("Your account is not verified, Please check your email to verify your account",
+                      str(response.data))
 
     def test_invalid_verification_link(self):
         uid = "c3VsYUBzdWxhLnN1bGE"

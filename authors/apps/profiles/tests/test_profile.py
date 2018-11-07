@@ -163,6 +163,8 @@ class ProfileApiTestCase(APITestCase):
         response = self.client.put(profile_url, self.edit_profile_data,
                                    format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("Sorry, you cannot edit another users profile",
+                      str(response.data))
 
     def test_user_not_found(self):
         """Test whether a user cannot test another's profile"""

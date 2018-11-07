@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     ArticlesListCreateAPIView,
-    ArticleRetrieveUpdateByIdAPIView,
+    ArticleRetrieveUpdateDestroy,
     ArticleRetrieveBySlugAPIView,
 )
 
@@ -11,7 +11,8 @@ urlpatterns = [
 
     # GET api/articles/id
     # PUT api/articles/id
-    path('/<int:pk>', ArticleRetrieveUpdateByIdAPIView.as_view(),
+    # DELETE api/articles/id
+    path('/<int:pk>', ArticleRetrieveUpdateDestroy.as_view(),
          name='article_by_id'),
 
     # GET api/articles/slug

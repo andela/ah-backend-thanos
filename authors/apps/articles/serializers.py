@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from rest_framework.exceptions import APIException
 from .models import Article
+from rest_framework.exceptions import NotFound
 from authors.apps.authentication.models import User
 from .validators import Validator
 
@@ -23,7 +23,7 @@ class ArticleSerializer(serializers.ModelSerializer):
                 "username": user_details.username,
                 "email": user_details.email}
             return article_details
-        raise APIException({"error": "User does not exist"})
+        raise NotFound(detail="User does not exist", code=404)
 
     def validate(self, data):
         validator = Validator
