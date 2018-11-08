@@ -135,7 +135,7 @@ class ArticleTests(BaseTest):
     def test_valid_page_number(self):
         self.test_create_article()
         articles_url = '/api/articles/?page=1'
-        response = self.client.get(articles_url, format='json')
+        self.client.get(articles_url, format='json')
 
     def test_like_article(self):
         self.test_create_article()

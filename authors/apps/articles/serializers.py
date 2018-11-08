@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Article, Comment, Thread, LikeArticle, Rating
+from .models import Article, Comment, Thread, LikeArticle, Rating, Bookmark
 
 from rest_framework.exceptions import NotFound
 
@@ -34,7 +34,8 @@ class ArticleSerializer(serializers.ModelSerializer):
             dislikes = LikeArticle.objects\
                                   .filter(article=article_details["id"])\
                                   .filter(like_status='dislike').count()
-            rating = Rating.objects.filter(article=article_details["id"]).aggregate(Avg('rating'))
+            rating = Rating.objects.filter(
+                article=article_details["id"]).aggregate(Avg('rating'))
             article_details["likes"] = likes
             article_details["dislikes"] = dislikes
             article_details["rating"] = rating['rating__avg']
@@ -142,6 +143,8 @@ class LikeStatusUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = LikeArticle
         fields = ['like_status']
+
+
 class RatingSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -167,3 +170,13 @@ class RatingSerializer(serializers.ModelSerializer):
             }
 
         return article_rating
+
+
+class BookmarkSerializer(serializers.ModelSerializer):
+    author = serializers.ReadOnlyField(source='article.author.username')
+    article = serializers.ReadOnlyField(source='article.id')
+    article_title = serializers.ReadOnlyField(source='article.title')
+
+    class Meta:
+        model = Bookmark
+        fields = ['author', 'article', 'article_title', 'bookmarked_at']

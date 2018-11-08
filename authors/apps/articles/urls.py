@@ -4,8 +4,8 @@ from .views import (
     ArticlesListCreateAPIView, ArticleRetrieveUpdateDestroy,
     ArticleRetrieveBySlugAPIView, CommentListCreateView,
     ThreadListCreateView, CommentRetrieveDeleteView, LikeAPIView,
-    UpdateLikeStatusAPIView, ArticleRating)
-
+    UpdateLikeStatusAPIView, BookmarkListCreateView,
+    BookmarkDestroyView, ArticleRating,)
 
 urlpatterns = [
 
@@ -32,5 +32,11 @@ urlpatterns = [
          name='like_article_update'),
 
     # GET/POST api/ratings
-    path('articles/<int:pk>/rating', ArticleRating.as_view(), name='ratings_list'),
+    path('articles/<int:pk>/rating', ArticleRating.as_view(),
+         name='ratings_list'),
+    path('articles/<int:pk>/bookmarks', BookmarkListCreateView.as_view(),
+         name='create_bookmark'),
+
+    path('articles/<int:pk>/bookmarks/<int:id>', BookmarkDestroyView.as_view(),
+         name='un_bookmark'),
 ]

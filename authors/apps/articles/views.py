@@ -2,18 +2,19 @@ import time
 import re
 
 from django.shortcuts import get_object_or_404
+
 from rest_framework import status
 from rest_framework import generics
 from rest_framework import permissions
 from rest_framework.response import Response
 
-from .models import Article, Comment, Thread, LikeArticle, Rating
+from .models import Article, Comment, Thread, LikeArticle, Rating, Bookmark
 from .renderers import (ArticleRenderer, CommentRenderer, ThreadRenderer,
-                        LikeStatusRenderer, RatingRenderer)
+                        LikeStatusRenderer, RatingRenderer, BookmarkRenderer)
 from .serializers import (ArticleSerializer, ArticlesUpdateSerializer,
                           CommentSerializer, ThreadCreateSerializer,
                           LikeSerializer, LikeStatusUpdateSerializer,
-                          RatingSerializer)
+                          RatingSerializer, BookmarkSerializer)
 from rest_framework.exceptions import (NotAcceptable, NotFound,
                                        ParseError,)
 from rest_framework.exceptions import NotFound
@@ -24,7 +25,7 @@ from authors.apps.core.utils.user_management import (
     get_id_from_token,
     validate_author
 )
-from rest_framework.exceptions import (ParseError,)
+
 
 
 class ArticlesListCreateAPIView(generics.ListCreateAPIView):
@@ -341,3 +342,41 @@ class ArticleRating(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class BookmarkListCreateView(generics.ListCreateAPIView):
+    queryset = Bookmark.objects.all()
+    serializer_class = BookmarkSerializer
+    renderer_classes = (BookmarkRenderer,)
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def create(self, request, *args, **kwargs):
+        print(request.data)
+        article = get_object_or_404(Article, pk=kwargs['pk'])
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        bookmark = Bookmark.objects.filter(article_id=article.id,
+                                           user=request.user.id).first()
+        if bookmark:
+            return Response({"message": "This has already been bookmarked"})
+        self.perform_create(serializer, article)
+        return Response(serializer.data, 201)
+
+    def perform_create(self, serializer, article):
+        serializer.save(user=self.request.user, article=article)
+
+
+class BookmarkDestroyView(generics.DestroyAPIView):
+    queryset = Article.objects.all()
+    serializer_class = BookmarkSerializer
+    renderer_classes = (BookmarkRenderer,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    lookup_field = 'id'
+
+    def destroy(self, request, *args, **kwargs):
+        bookmark = Bookmark.objects.filter(article_id=kwargs['id'],
+                                           user=request.user.id).first()
+        if not bookmark:
+            return Response({"message": "This bookmark doesn\'t exist"}, 204)
+        self.perform_destroy(bookmark)
+        return Response({"message": "Bookmark succesfully deleted"}, 200)

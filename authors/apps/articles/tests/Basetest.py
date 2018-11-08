@@ -133,3 +133,4 @@ class BaseTest(APITestCase):
                                        args=(a_id, c_id,))
         self.thread_url = reverse("articles:comment_on_comment",
                                   args=(a_id, c_id,))
+        self.bookmark_url = reverse("articles:create_bookmark", args=(a_id,))

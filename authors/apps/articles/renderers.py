@@ -1,9 +1,9 @@
 import json
 from rest_framework.renderers import JSONRenderer
-from .models import Article
 from rest_framework.utils.serializer_helpers import ReturnList
 
-from ..core.utils.generate_renderer import GeneralRenderer
+from ..core.utils.general_renderer import GeneralRenderer
+from .models import Article
 
 
 class ArticleRenderer(JSONRenderer):
@@ -13,7 +13,7 @@ class ArticleRenderer(JSONRenderer):
         '''
         Return a dictionary with 2 entries:
         key = "articles", value = a LIST of articles
-        key = "articlesCount", value = number of articles
+        ke y = "articlesCount", value = number of articles
         '''
         if type(data) != ReturnList:
             errors = data.get('errors', None)
@@ -43,7 +43,8 @@ class ThreadRenderer(GeneralRenderer):
 class LikeStatusRenderer(GeneralRenderer):
     charset = 'utf-8'
     object_name = 'Like_status'
-    
+
+
 class RatingRenderer(JSONRenderer):
 
     charset = 'utf-8'
@@ -52,3 +53,8 @@ class RatingRenderer(JSONRenderer):
         return json.dumps({
             "article_scores": data,
         })
+
+
+class BookmarkRenderer(GeneralRenderer):
+    charset = 'utf-8'
+    object_name = 'bookmark'
