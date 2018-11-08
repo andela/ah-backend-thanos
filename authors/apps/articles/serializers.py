@@ -1,12 +1,15 @@
 from rest_framework import serializers
-from .models import Article, Comment, Thread
+from .models import Article, Comment, Thread, LikeArticle
 
+from rest_framework.exceptions import NotFound
+from authors.apps.authentication.models import User
 from .validators import Validator
 
 from ..core.utils.generate_author_details import to_represent_article
 
 
 class ArticleSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Article
         fields = '__all__'
@@ -15,8 +18,23 @@ class ArticleSerializer(serializers.ModelSerializer):
         '''
         Show author's actual details instead of author's id
         '''
-        article_details = super().to_representation(data)
-        return to_represent_article(article_details)
+        article_details = super(
+            ArticleSerializer, self).to_representation(data)
+        if User.objects.filter(pk=int(article_details["author"])).exists():
+            user_details = User.objects.get(pk=int(article_details["author"]))
+            article_details["author"] = {
+                "id": user_details.id,
+                "username": user_details.username,
+                "email": user_details.email}
+            likes = LikeArticle.objects.filter(article=article_details["id"])\
+                                       .filter(like_status='like').count()
+            dislikes = LikeArticle.objects\
+                                  .filter(article=article_details["id"])\
+                                  .filter(like_status='dislike').count()
+            article_details["likes"] = likes
+            article_details["dislikes"] = dislikes
+            return article_details
+        raise NotFound(detail="User does not exist", code=404)
 
     def validate(self, data):
         validator = Validator
@@ -34,6 +52,7 @@ class ArticleSerializer(serializers.ModelSerializer):
 
 
 class ArticlesUpdateSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Article
         fields = ['slug', 'title', 'description', 'body',
@@ -91,3 +110,30 @@ class ThreadCreateSerializer(serializers.ModelSerializer):
                   'created_at', 'updated_at')
 
         read_only_fields = ('author', 'comment')
+
+
+class LikeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = LikeArticle
+        fields = '__all__'
+
+    def to_representation(self, data):
+        '''
+        Show author's actual details instead of author's id
+        '''
+        like_status_details = super(
+            LikeSerializer, self).to_representation(data)
+        if User.objects.filter(pk=int(like_status_details["user"])).exists():
+            user_details = User.objects.get(
+                pk=int(like_status_details["user"]))
+            like_status_details["user"] = user_details.username
+            return like_status_details
+        raise NotFound(detail="User does not exist", code=404)
+
+
+class LikeStatusUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = LikeArticle
+        fields = ['like_status']

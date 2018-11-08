@@ -6,15 +6,15 @@ from rest_framework import status
 from rest_framework import generics
 from rest_framework import permissions
 from rest_framework.response import Response
-from rest_framework.exceptions import NotFound
 
-from .models import Article, Comment, Thread
-from .renderers import ArticleRenderer, CommentRenderer, ThreadRenderer
-from .serializers import (ArticleSerializer,
-                          ArticlesUpdateSerializer,
-                          CommentSerializer,
-                          ThreadCreateSerializer,
-                          )
+from .models import Article, Comment, Thread, LikeArticle
+from .renderers import (ArticleRenderer, CommentRenderer, ThreadRenderer,
+                        LikeStatusRenderer)
+from .serializers import (ArticleSerializer, ArticlesUpdateSerializer,
+                          CommentSerializer, ThreadCreateSerializer,
+                          LikeSerializer, LikeStatusUpdateSerializer)
+from rest_framework.exceptions import (NotAcceptable, NotFound,
+                                       ParseError,)
 from authors.apps.core.utils.generate_slug import generate_slug
 from authors.apps.core.utils.user_management import (
     get_id_from_token,
@@ -85,9 +85,9 @@ class ArticleRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
     def update(self, request, *args, **kwargs):
         if not Article.objects.filter(pk=kwargs['pk']).exists():
-            raise NotFound(detail="Article Not found", code=404)
+            raise NotFound(detail="Article Not found",)
         article = Article.objects.get(pk=kwargs['pk'])
-
+        print(article)
         title = request.data.get('title', article.title)
         slug = generate_slug(title)
         if Article.objects.filter(slug=slug).exists():
@@ -114,7 +114,7 @@ class ArticleRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
     def destroy(self, request, *args, **kwargs):
         if not Article.objects.filter(pk=kwargs['pk']).exists():
-            raise NotFound(detail="Article Not found", code=404)
+            raise NotFound(detail="Article Not found",)
         article = Article.objects.get(pk=kwargs['pk'])
         author_id, username = get_id_from_token(request)
         validate_author(author_id, article.author.id)
@@ -167,6 +167,49 @@ class CommentListCreateView(generics.ListCreateAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class LikeAPIView(generics.GenericAPIView):
+    """
+    post: Create an  like or dislike.
+    """
+    serializer_class = LikeSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    renderer_classes = (LikeStatusRenderer,)
+    lookup_field = 'pk'
+
+    def post(self, request, *args, **kwargs):
+        if not Article.objects.filter(pk=kwargs['pk']).exists():
+            raise NotFound(detail="Article Not found")
+        article_id = kwargs['pk']
+        like_status = request.data.get('like_status')
+        user, author_username = get_id_from_token(request)
+
+        if LikeArticle.objects.filter(user=user)\
+                              .filter(article=article_id).exists():
+            raise NotAcceptable(
+                detail="You have already liked/disliked this article")
+        article_data = Article.objects.get(pk=article_id)
+        new_like_status = {
+            "article": article_id,
+            "article_title": article_data.title,
+            "like_status": like_status,
+            "user": user
+        }
+        serializer = self.serializer_class(data=new_like_status)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def get(self, request, *args, **kwargs):
+        if not Article.objects.filter(pk=kwargs['pk']).exists():
+            raise NotFound(detail="Article Not found")
+        if LikeArticle.objects.filter(article=kwargs['pk']).exists():
+            like_status = LikeArticle.objects.filter(article=kwargs['pk'])
+            like_statuses = LikeSerializer(like_status, many=True)
+            return Response(like_statuses.data, status=status.HTTP_200_OK)
+        raise ParseError(
+            detail="This article has not been liked/disliked yet",)
+
+
 class ThreadListCreateView(generics.ListCreateAPIView):
     queryset = Thread.objects.all()
     serializer_class = ThreadCreateSerializer
@@ -181,8 +224,7 @@ class ThreadListCreateView(generics.ListCreateAPIView):
         serializer_data = request.data.get('threads', {})
         serializer = self.serializer_class(
             context=serializer_context,
-            data=serializer_data,
-        )
+            data=serializer_data,)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -224,3 +266,33 @@ class CommentRetrieveDeleteView(generics.RetrieveDestroyAPIView):
         self.perform_destroy(comment)
         return Response({"message": "Comment deleted sucessfully"},
                         status=status.HTTP_200_OK)
+
+
+class UpdateLikeStatusAPIView(generics.RetrieveUpdateAPIView):
+    serializer_class = LikeSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    renderer_classes = (LikeStatusRenderer,)
+    lookup_field = 'pk'
+
+    def put(self, request, *args, **kwargs):
+        article_id = kwargs['pk']
+        if not Article.objects.filter(pk=article_id).exists():
+            raise NotFound(detail="Article Not found")
+        user, author_username = get_id_from_token(request)
+        current_like_status = LikeArticle.objects.filter(
+            user=user).get(article=article_id)
+
+        like_status_update = request.data.get(
+            'like_status', current_like_status.like_status)
+        if not LikeArticle.objects.filter(user=user)\
+                                  .filter(article=article_id).exists():
+            raise NotAcceptable(
+                detail="Your not supposed to be changing this",)
+
+        new_like_status = {
+            "like_status": like_status_update,
+        }
+        serializer = LikeStatusUpdateSerializer(data=new_like_status)
+        serializer.is_valid(raise_exception=True)
+        serializer.update(current_like_status, new_like_status)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -35,7 +35,16 @@ class BaseTest(APITestCase):
             "image_url": "http://iviidev.info/downloads/image.jpg",
             "tag_list": ["dragons", "fantacy"]
         }
-
+        self.article_with_missing_fields = {
+            "title": "Getting started with JS"
+        }
+        self.article_with_bad_title = {
+            "title": "1",
+            "description": "Ever wonder how?",
+            "body": "It takes a Jacobian",
+            "image_url": "http://iviidev.info/downloads/image.jpg",
+            "tag_list": ["dragons", "fantacy"]
+        }
         self.signup_data = {
             "user": {
                 "email": "jackkatto@gmail.com",
@@ -48,6 +57,15 @@ class BaseTest(APITestCase):
                 "email": "jackkatto@gmail.com",
                 "password": "jackkatto123#",
             }
+        }
+        self.edit_data = {
+            "title": "This title has been edited",
+        }
+        self.like_status_data = {
+            "like_status": "like"
+        }
+        self.like_status_update_data = {
+            "like_status": "dislike"
         }
         self.comment_data = {
             "comments": {

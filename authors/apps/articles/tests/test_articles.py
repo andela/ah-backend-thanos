@@ -1,15 +1,12 @@
-from rest_framework.test import APITestCase
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.exceptions import AuthenticationFailed
 
 from django.contrib.auth import get_user_model
-from django.utils.encoding import force_text
-from django.utils.http import urlsafe_base64_encode
-from django.contrib.auth.tokens import default_token_generator
 
 from authors.apps.articles.models import Article
 from authors.apps.core.utils.user_management import validate_author
+from .Basetest import BaseTest
 
 User = get_user_model()
 articles_url = reverse("articles:list_create")
@@ -17,62 +14,7 @@ signup_url = reverse("authentication:signup")
 login_url = reverse("authentication:login")
 
 
-class ArticleTests(APITestCase):
-
-    def setUp(self):
-        self.data = {
-            "title": "How to train your Dragon",
-            "description": "Ever wonder how?",
-            "body": "It takes a Jacobian",
-            "image_url": "http://iviidev.info/downloads/image.jpg",
-            "tag_list": ["dragons", "fantacy"]
-        }
-        self.edit_data = {
-            "title": "This title has been edited",
-        }
-        self.article_with_bad_title = {
-            "title": "1",
-            "description": "Ever wonder how?",
-            "body": "It takes a Jacobian",
-            "image_url": "http://iviidev.info/downloads/image.jpg",
-            "tag_list": ["dragons", "fantacy"]
-        }
-        self.article_with_missing_fields = {
-            "title": "Getting started with JS"
-        }
-        self.signup_data = {
-            "user": {
-                "email": "jackkatto@gmail.com",
-                "username": "jackkatto",
-                "password": "jackkatto123#",
-            }
-        }
-        self.login_data = {
-            "user": {
-                "email": "jackkatto@gmail.com",
-                "password": "jackkatto123#",
-            }
-        }
-
-        # Register User
-        self.response = self.client.post(signup_url,
-                                         self.signup_data,
-                                         format="json")
-
-        #  Verify user account
-        user = User.objects.get(email=self.login_data["user"]["email"])
-        uid = force_text(urlsafe_base64_encode(user.email.encode("utf8")))
-        activation_token = default_token_generator.make_token(user)
-        url = reverse("authentication:activate_account",
-                      args=(uid, activation_token,))
-        self.client.get(url, format="json")
-
-        # Test user login
-        self.login_response = self.client.post(
-            login_url, self.login_data, format="json")
-        self.assertEqual(self.login_response.status_code, status.HTTP_200_OK)
-        login_token = self.login_response.data['token']
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + login_token)
+class ArticleTests(BaseTest):
 
     def test_create_article(self):
         response = self.client.post(articles_url, self.data, format='json')
@@ -86,7 +28,7 @@ class ArticleTests(APITestCase):
         response = self.client.get(articles_url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("How to train your Dragon", str(response.data))
-        self.assertEqual(len(articles), 1)
+        self.assertEqual(len(articles), 2)
 
     def test_get_article_by_id(self):
         self.test_create_article()
@@ -183,4 +125,75 @@ class ArticleTests(APITestCase):
         articles_url = '/api/articles/?page=1'
         response = self.client.get(articles_url, format='json')
 
+    def test_like_article(self):
+        self.test_create_article()
+        article = Article.objects.all().first()
+        like_status_url = "/api/articles/{}/like_status".format(article.pk)
+        response = self.client.post(like_status_url,
+                                    self.like_status_data,
+                                    format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_like_status_article_doesent_exist(self):
+        like_status_url = "/api/articles/{}/like_status".format(100)
+        response = self.client.post(like_status_url,
+                                    self.like_status_data,
+                                    format='json')
+        self.assertIn("Article Not found",
+                      str(response.data))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_already_like_article(self):
+        self.test_create_article()
+        article = Article.objects.all().first()
+        like_status_url = "/api/articles/{}/like_status".format(article.pk)
+        self.client.post(like_status_url,
+                         self.like_status_data,
+                         format='json')
+        response = self.client.post(like_status_url,
+                                    self.like_status_data,
+                                    format='json')
+        self.assertEqual(response.status_code, status.HTTP_406_NOT_ACCEPTABLE)
+
+    def test_get_like_status(self):
+        self.test_create_article()
+        article = Article.objects.all().first()
+        like_status_url = "/api/articles/{}/like_status".format(article.pk)
+        self.client.post(like_status_url,
+                         self.like_status_data,
+                         format='json')
+        response = self.client.get(like_status_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_like_status_article_doesnt_exist(self):
+        like_status_url = "/api/articles/{}/like_status".format(100)
+        self.client.post(like_status_url,
+                         self.like_status_data,
+                         format='json')
+        response = self.client.get(like_status_url, format='json')
+        self.assertIn("Article Not found",
+                      str(response.data))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_get_like_status_article_not_liked_yet(self):
+        self.test_create_article()
+        article = Article.objects.all().first()
+        like_status_url = "/api/articles/{}/like_status".format(article.pk)
+        response = self.client.get(like_status_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("This article has not been liked/disliked yet",
+                      str(response.data))
+
+    def test_update_like_status(self):
+        self.test_create_article()
+        article = Article.objects.all().first()
+        like_status_url = "/api/articles/{}/like_status".format(article.pk)
+        like_status_update_url = "/api/articles/{}/like_status_update".format(
+            article.pk)
+        self.client.post(like_status_url,
+                         self.like_status_data,
+                         format='json')
+        response = self.client.put(like_status_update_url,
+                                   self.like_status_update_data,
+                                   format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)

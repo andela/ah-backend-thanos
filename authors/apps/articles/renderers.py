@@ -38,3 +38,8 @@ class CommentRenderer(GeneralRenderer):
 class ThreadRenderer(GeneralRenderer):
     charset = 'utf-8'
     object_name = 'threads'
+
+
+class LikeStatusRenderer(GeneralRenderer):
+    charset = 'utf-8'
+    object_name = 'Like_status'
