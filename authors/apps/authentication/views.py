@@ -3,11 +3,13 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import serializers
 from rest_framework import generics
+from rest_framework.reverse import reverse
 from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import get_user_model
 from django.conf import settings
+from rest_framework.views import APIView
 from datetime import datetime, timedelta
 import jwt
 import re
@@ -22,6 +24,37 @@ from .serializers import (
 from .send_email_util import SendEmail
 
 User = get_user_model()
+
+
+def get_data_pipeline(backend, response, *args, **kwargs):  # pragma: no cover
+
+    if backend.name == 'google-oauth2':  # pragma: no cover
+        email = kwargs['details']['email']
+        username = response['displayName']
+
+    if backend.name == 'facebook':  # pragma: no cover
+        email = kwargs['details']['email']
+        username = response.get('name')
+
+    if backend.name == 'twitter':  # pragma: no cover
+        email = kwargs['details']['email']
+        username = response['screen_name']
+
+    try:  # pragma: no cover
+        global auth_user
+        auth_user = User.objects.get(email=email)
+    except(TypeError, ValueError, OverflowError, User.DoesNotExist):  # pragma: no cover
+        auth_user = None
+
+    if auth_user:  # pragma: no cover
+        auth_user.token
+    else:  # pragma: no cover
+        auth_user = User(email=email, username=username)
+        password = User.objects.make_random_password()
+        auth_user.set_password(password)
+        auth_user.save()
+        auth_user.is_verified = True
+        auth_user.token
 
 
 class RegistrationAPIView(generics.CreateAPIView):
@@ -108,7 +141,7 @@ class LoginAPIView(generics.CreateAPIView):
 #         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class AccountVerificationAPIView(generics.GenericAPIView):
+class AccountVerificationAPIView(APIView):
     permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
 
@@ -207,3 +240,48 @@ class ResetPassword(generics.GenericAPIView):
         return Response({'message':
                          'you have successfully changed your password'},
                         status=status.HTTP_200_OK)
+
+
+class OauthAPIView(generics.GenericAPIView):
+    permission_classes = (AllowAny,)
+    # renderer_classes = (UserJSONRenderer,)
+
+    def get(self, request, social_auth_Provider, auth_provider_url=None):
+        social_auth_Provider = social_auth_Provider.lower()
+
+        if social_auth_Provider == 'google':
+            auth_provider_url = reverse(
+                'social:begin', args=('google-oauth2',))
+
+        if social_auth_Provider == 'facebook':
+            auth_provider_url = reverse('social:begin', args=('facebook',))
+
+        if social_auth_Provider == 'twitter':
+            auth_provider_url = reverse('social:begin', args=('twitter',))
+
+        if auth_provider_url is not None:
+            redirect_to_login_url = """{}://{}{}""".format(
+                request.scheme, request.get_host(), auth_provider_url)
+            return Response(redirect_to_login_url, status.HTTP_200_OK)
+        return Response({"error": "Please Login with google, \
+                facebook or twitter"}, status.HTTP_400_BAD_REQUEST)
+
+
+class OauthlLoginAPIView(APIView):  # pragma: no cover
+    permission_classes = (AllowAny,)
+    renderer_classes = (UserJSONRenderer,)
+
+    def get(self, request):  # pragma: no cover
+        try:
+
+            response = {
+                "username": auth_user.username,
+                "email": auth_user.email,
+                "token": auth_user.token
+            }
+            return Response(response, status.HTTP_200_OK)  # pragma: no cover
+
+        except(TypeError, ValueError, OverflowError):  # pragma: no cover
+
+            return Response({"error": "Unable to login"},
+                            status.HTTP_400_BAD_REQUEST)
