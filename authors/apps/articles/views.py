@@ -1,5 +1,7 @@
 import time
-import re
+from rest_framework.exceptions import (NotAcceptable,
+                                       NotFound,
+                                       ParseError,)
 
 from django.shortcuts import get_object_or_404
 
@@ -8,15 +10,18 @@ from rest_framework import generics
 from rest_framework import permissions
 from rest_framework.response import Response
 
-from .models import Article, Comment, Thread, LikeArticle, Rating, Bookmark
+from .models import (Article, Comment, Thread, LikeArticle, Rating, Bookmark,
+                     FavoriteArticle,)
 from .renderers import (ArticleRenderer, CommentRenderer, ThreadRenderer,
-                        LikeStatusRenderer, RatingRenderer, BookmarkRenderer)
+                        LikeStatusRenderer, RatingRenderer, BookmarkRenderer,
+                        FavoriteStatusRenderer)
 from .serializers import (ArticleSerializer, ArticlesUpdateSerializer,
                           CommentSerializer, ThreadCreateSerializer,
                           LikeSerializer, LikeStatusUpdateSerializer,
-                          RatingSerializer, BookmarkSerializer)
-from rest_framework.exceptions import (NotAcceptable, NotFound,
-                                       ParseError,)
+                          RatingSerializer, BookmarkSerializer,
+                          FavoriteStatusSerializer,
+                          FavoriteStatusUpdateSerializer,
+                          GetFavoriteArticleSerializer,)
 
 
 from authors.apps.core.utils.generate_slug import generate_slug
@@ -24,6 +29,7 @@ from authors.apps.core.utils.user_management import (
     get_id_from_token,
     validate_author
 )
+from authors.apps.core.utils.article_management import article_not_found
 
 
 class ArticlesListCreateAPIView(generics.ListCreateAPIView):
@@ -43,14 +49,6 @@ class ArticlesListCreateAPIView(generics.ListCreateAPIView):
         tag_list = request.data.get('tag_list')
         image_url = request.data.get('image_url')
         audio_url = request.data.get('audio_url')
-
-        # slug: Allow only alphanumeric values and dashes for spaces
-        slug = ''
-        for i in re.split(r'(.)', title.strip().lower()):
-            if i.isalnum():
-                slug += i
-            elif i == ' ':
-                slug += '-'
 
         author_id, author_username = get_id_from_token(request)
 
@@ -88,8 +86,8 @@ class ArticleRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'pk'
 
     def update(self, request, *args, **kwargs):
-        if not Article.objects.filter(pk=kwargs['pk']).exists():
-            raise NotFound(detail="Article Not found",)
+        article_id = kwargs['pk']
+        article_not_found(article_id)
         article = Article.objects.get(pk=kwargs['pk'])
         print(article)
         title = request.data.get('title', article.title)
@@ -117,14 +115,93 @@ class ArticleRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
-        if not Article.objects.filter(pk=kwargs['pk']).exists():
-            raise NotFound(detail="Article Not found",)
+        article_id = kwargs['pk']
+        article_not_found(article_id)
         article = Article.objects.get(pk=kwargs['pk'])
         author_id, username, = get_id_from_token(request)
         validate_author(author_id, article.author.id)
         self.perform_destroy(article)
         return Response({"messge": "Article deleted sucessfully"},
                         status=status.HTTP_200_OK)
+
+
+class FavoriteStatusAPIView(generics.GenericAPIView):
+    """
+    post: Create an  favorite.
+    """
+    serializer_class = FavoriteStatusSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    renderer_classes = (FavoriteStatusRenderer,)
+    lookup_field = 'pk'
+
+    def post(self, request, *args, **kwargs):
+        article_id = kwargs['pk']
+        article_not_found(article_id)
+        favorite_status = request.data.get('favorite_status')
+        user, author_username = get_id_from_token(request)
+
+        if FavoriteArticle.objects.filter(user=user)\
+                          .filter(article=article_id)\
+                          .exists():
+            raise NotAcceptable(
+                detail="You have already favorited this article",)
+        article_data = Article.objects.get(pk=article_id)
+        new_like_status = {
+            "article": article_id,
+            "article_title": article_data.title,
+            "favorite_status": favorite_status,
+            "user": user
+        }
+        serializer = self.serializer_class(data=new_like_status)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def get(self, request, *args, **kwargs):
+        article_id = kwargs['pk']
+        article_not_found(article_id)
+        if FavoriteArticle.objects.filter(article=article_id).exists():
+            favorite_status = FavoriteArticle.objects.filter(
+                article=article_id)
+            favorite_statuses = FavoriteStatusSerializer(
+                favorite_status, many=True)
+            return Response(favorite_statuses.data, status=status.HTTP_200_OK)
+        raise ParseError(detail="This article has not been favorited yet",)
+
+    def put(self, request, *args, **kwargs):
+        article_id = kwargs['pk']
+        article_not_found(article_id)
+        user, author_username = get_id_from_token(request)
+        current_favorite_status = FavoriteArticle.objects.filter(
+            user=user).get(article=article_id)
+
+        favorite_status_update = request.data.get(
+            'favorite_status', current_favorite_status.favorite_status)
+        if not FavoriteArticle.objects.filter(user=user)\
+                                      .filter(article=article_id).exists():
+            raise NotAcceptable(
+                detail="Your not supposed to be changing this",)
+        print(current_favorite_status.article.pk)
+        new_favorite_status = {
+            "favorite_status": favorite_status_update,
+        }
+        serializer = FavoriteStatusUpdateSerializer(data=new_favorite_status)
+        serializer.is_valid(raise_exception=True)
+        serializer.update(current_favorite_status, new_favorite_status)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class GetFavoriteArticles(generics.ListAPIView):
+
+    queryset = Article.objects.all()
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+    def list(self, request, *args, **kwargs):
+        current_user_favorites = FavoriteArticle.objects.filter(
+            user=request.user, favorite_status=True)
+        serializer = GetFavoriteArticleSerializer(
+            current_user_favorites, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ArticleRetrieveBySlugAPIView(generics.RetrieveAPIView):
@@ -163,8 +240,8 @@ class CommentListCreateView(generics.ListCreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def list(self, request, *args, **kwargs):
-        if not Article.objects.filter(pk=kwargs['article_id']).exists():
-            raise NotFound(detail="Sorry this article doesn't exist", code=404)
+        article_id = kwargs['article_id']
+        article_not_found(article_id)
 
         comment = Comment.objects.filter(article=kwargs['article_id'])
         if not comment:
@@ -186,9 +263,8 @@ class LikeAPIView(generics.GenericAPIView):
     lookup_field = 'pk'
 
     def post(self, request, *args, **kwargs):
-        if not Article.objects.filter(pk=kwargs['pk']).exists():
-            raise NotFound(detail="Article Not found")
         article_id = kwargs['pk']
+        article_not_found(article_id)
         like_status = request.data.get('like_status')
         user, author_username = get_id_from_token(request)
 
@@ -209,14 +285,35 @@ class LikeAPIView(generics.GenericAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def get(self, request, *args, **kwargs):
-        if not Article.objects.filter(pk=kwargs['pk']).exists():
-            raise NotFound(detail="Article Not found")
+        article_id = kwargs['pk']
+        article_not_found(article_id)
         if LikeArticle.objects.filter(article=kwargs['pk']).exists():
             like_status = LikeArticle.objects.filter(article=kwargs['pk'])
             like_statuses = LikeSerializer(like_status, many=True)
             return Response(like_statuses.data, status=status.HTTP_200_OK)
         raise ParseError(
             detail="This article has not been liked/disliked yet",)
+
+    def put(self, request, *args, **kwargs):
+        article_id = kwargs['pk']
+        article_not_found(article_id)
+        user, author_username = get_id_from_token(request)
+        current_like_status = LikeArticle.objects.filter(
+            user=user).get(article=article_id)
+
+        like_status_update = request.data.get(
+            'like_status', current_like_status.like_status)
+        if not LikeArticle.objects.filter(user=user)\
+                                  .filter(article=article_id).exists():
+            raise NotAcceptable(
+                detail="Your not supposed to be changing this",)
+
+        new_like_status = {
+            "like_status": like_status_update}
+        serializer = LikeStatusUpdateSerializer(data=new_like_status)
+        serializer.is_valid(raise_exception=True)
+        serializer.update(current_like_status, new_like_status)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ThreadListCreateView(generics.ListCreateAPIView):
@@ -274,39 +371,6 @@ class CommentDeleteView(generics.DestroyAPIView):
                         status=status.HTTP_200_OK)
 
 
-class UpdateLikeStatusAPIView(generics.RetrieveUpdateAPIView):
-    """
-    put: Update Status
-    """
-    serializer_class = LikeSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
-    renderer_classes = (LikeStatusRenderer,)
-    lookup_field = 'pk'
-
-    def put(self, request, *args, **kwargs):
-        article_id = kwargs['pk']
-        if not Article.objects.filter(pk=article_id).exists():
-            raise NotFound(detail="Article Not found")
-        user, author_username = get_id_from_token(request)
-        current_like_status = LikeArticle.objects.filter(
-            user=user).get(article=article_id)
-
-        like_status_update = request.data.get(
-            'like_status', current_like_status.like_status)
-        if not LikeArticle.objects.filter(user=user)\
-                                  .filter(article=article_id).exists():
-            raise NotAcceptable(
-                detail="Your not supposed to be changing this",)
-
-        new_like_status = {
-            "like_status": like_status_update,
-        }
-        serializer = LikeStatusUpdateSerializer(data=new_like_status)
-        serializer.is_valid(raise_exception=True)
-        serializer.update(current_like_status, new_like_status)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
 class ArticleRating(generics.ListCreateAPIView):
     """
     post: rate an article
@@ -320,10 +384,9 @@ class ArticleRating(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         article_id = kwargs['pk']
         rating = request.data.get('rating')
+        message = "Score value must not go below `0` and not go beyond `5`"
         if rating > 5 or rating < 0:
-            raise ParseError(
-                detail="Score value must not go below `0` and not go beyond `5`")
-
+            raise ParseError(detail=message)
         reader, author_username, = get_id_from_token(request)
 
         article = Article.objects.get(pk=article_id)

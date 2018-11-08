@@ -58,3 +58,8 @@ class RatingRenderer(JSONRenderer):
 class BookmarkRenderer(GeneralRenderer):
     charset = 'utf-8'
     object_name = 'bookmark'
+
+
+class FavoriteStatusRenderer(JSONRenderer):
+    charset = 'utf-8'
+    object_name = 'favorite_status'

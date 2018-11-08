@@ -72,7 +72,12 @@ class BaseTest(APITestCase):
                 "comment_body": "This is a comment"
             }
         }
-
+        self.favorite_status_data = {
+            "favorite_status": "True"
+        }
+        self.favorite_status_update_data = {
+            "favorite_status": "False"
+        }
         self.thread_data = {
             "threads": {
                 "thread_body": "This is a thread comment"

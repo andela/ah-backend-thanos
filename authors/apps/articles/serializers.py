@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Article, Comment, Thread, LikeArticle, Rating, Bookmark
+from .models import (Article, Comment, Thread, LikeArticle, Rating,
+                     FavoriteArticle, Bookmark,)
 
 from rest_framework.exceptions import NotFound
 
@@ -34,15 +35,21 @@ class ArticleSerializer(serializers.ModelSerializer):
             dislikes = LikeArticle.objects\
                                   .filter(article=article_details["id"])\
                                   .filter(like_status='dislike').count()
-            rating = Rating.objects.filter(
-                article=article_details["id"]).aggregate(Avg('rating'))
+            rating = Rating.objects.filter(article=article_details["id"])\
+                                   .aggregate(Avg('rating'))
+            favorites = FavoriteArticle.objects\
+                                       .filter(article=article_details["id"])\
+                                       .filter(favorite_status='True').count()
+            article_details["likes"] = likes
             article_details["likes"] = likes
             article_details["dislikes"] = dislikes
+            article_details["Favorites_count"] = favorites
             article_details["rating"] = rating['rating__avg']
             if article_details["rating"] is not None:
                 article_details["rating"] = round(rating['rating__avg'], 1)
             else:
                 article_details["rating"] = 0
+
             return article_details
 
         raise NotFound(detail="User does not exist", code=404)
@@ -99,7 +106,6 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
         fields = ('id', 'comment_body', 'comment_author',
                   'created_at', 'updated_at')
-
         read_only_fields = ('comment_author',)
 
 
@@ -143,6 +149,42 @@ class LikeSerializer(serializers.ModelSerializer):
         raise NotFound(detail="User does not exist", code=404)
 
 
+class FavoriteStatusSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = FavoriteArticle
+        fields = '__all__'
+
+    def to_representation(self, data):
+        '''
+        Show author's actual details instead of author's id
+        '''
+        favorite_details = super(
+            FavoriteStatusSerializer, self).to_representation(data)
+        if User.objects.filter(pk=int(favorite_details["user"])).exists():
+            user_details = User.objects.get(
+                pk=int(favorite_details["user"]))
+            favorite_details["user"] = user_details.username
+            return favorite_details
+        raise NotFound(detail="User does not exist", code=404)
+
+
+class GetFavoriteArticleSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = FavoriteArticle
+        fields = '__all__'
+
+    def to_representation(self, data):
+        '''
+        Show author's actual details instead of author's id
+        '''
+        favorite_details = super(
+            GetFavoriteArticleSerializer, self).to_representation(data)
+        article = Article.objects.get(pk=int(favorite_details["article"]))
+        return ArticleSerializer(article).data
+
+
 class LikeStatusUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -173,7 +215,6 @@ class RatingSerializer(serializers.ModelSerializer):
                 "article_slug": article_slug.slug
 
             }
-
         return article_rating
 
 
@@ -186,3 +227,10 @@ class BookmarkSerializer(serializers.ModelSerializer):
         model = Bookmark
         fields = ['author', 'article', 'article_title', 'bookmarked_at']
         read_only_fields = ('bookmarked_at',)
+
+
+class FavoriteStatusUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = FavoriteArticle
+        fields = ['favorite_status']
