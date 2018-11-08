@@ -4,11 +4,13 @@ from .views import (
     ArticlesListCreateAPIView, ArticleRetrieveUpdateDestroy,
     ArticleRetrieveBySlugAPIView, CommentListCreateView,
     ThreadListCreateView, CommentRetrieveDeleteView, LikeAPIView,
-    UpdateLikeStatusAPIView)
+    UpdateLikeStatusAPIView, ArticleRating)
+
 
 urlpatterns = [
+
     # GET/POST api/articles
-    path('', ArticlesListCreateAPIView.as_view(), name='list_create'),
+    path('articles', ArticlesListCreateAPIView.as_view(), name='list_create'),
     # GET api/articles/id
     path('articles/<int:pk>', ArticleRetrieveUpdateDestroy.as_view(),
          name='article_by_id'),
@@ -29,4 +31,6 @@ urlpatterns = [
          UpdateLikeStatusAPIView.as_view(),
          name='like_article_update'),
 
+    # GET/POST api/ratings
+    path('articles/<int:pk>/rating', ArticleRating.as_view(), name='ratings_list'),
 ]

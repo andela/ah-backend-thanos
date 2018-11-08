@@ -1,9 +1,12 @@
 from rest_framework import serializers
-from .models import Article, Comment, Thread, LikeArticle
+from .models import Article, Comment, Thread, LikeArticle, Rating
 
 from rest_framework.exceptions import NotFound
+
+
 from authors.apps.authentication.models import User
 from .validators import Validator
+from django.db.models import Avg
 
 from ..core.utils.generate_author_details import to_represent_article
 
@@ -31,8 +34,10 @@ class ArticleSerializer(serializers.ModelSerializer):
             dislikes = LikeArticle.objects\
                                   .filter(article=article_details["id"])\
                                   .filter(like_status='dislike').count()
+            rating = Rating.objects.filter(article=article_details["id"]).aggregate(Avg('rating'))
             article_details["likes"] = likes
             article_details["dislikes"] = dislikes
+            article_details["rating"] = rating['rating__avg']
             return article_details
         raise NotFound(detail="User does not exist", code=404)
 
@@ -137,3 +142,28 @@ class LikeStatusUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = LikeArticle
         fields = ['like_status']
+class RatingSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Rating
+        fields = ['rating', 'reader', 'article']
+
+    def to_representation(self, data):
+
+        article_slug = {}
+        article_rating = super(RatingSerializer, self).to_representation(data)
+
+        if User.objects.filter(pk=int(article_rating['reader'])).exists():
+            user_detail = User.objects.get(pk=int(article_rating["reader"]))
+
+        if Rating.objects.filter(pk=int(article_rating['article'])).exists():
+            article_slug = Article.objects.get(
+                pk=int(article_rating['article']))
+
+            article_rating["reader"] = {
+                "username": user_detail.username,
+                "article_slug": article_slug.slug
+
+            }
+
+        return article_rating

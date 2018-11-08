@@ -1,6 +1,9 @@
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.exceptions import AuthenticationFailed
+from django.utils.encoding import force_text
+from django.utils.http import urlsafe_base64_encode
+from django.contrib.auth.tokens import default_token_generator
 
 from django.contrib.auth import get_user_model
 
@@ -29,6 +32,15 @@ class ArticleTests(BaseTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("How to train your Dragon", str(response.data))
         self.assertEqual(len(articles), 2)
+
+    def test_get_two_articles(self):
+        # first create an article
+        self.test_create_article()
+        self.test_create_article()
+        articles = Article.objects.all()
+        response = self.client.get(articles_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(articles), 3)
 
     def test_get_article_by_id(self):
         self.test_create_article()
@@ -81,7 +93,7 @@ class ArticleTests(BaseTest):
         self.assertIn("Invalid/expired token", str(response.data))
 
     def test_article_not_found(self):
-        response = self.client.put("/api/articles/100000",
+        response = self.client.put("/api/articles/2",
                                    self.edit_data,
                                    format='json')
         self.assertIn("Article Not found", str(response.data))
@@ -197,3 +209,66 @@ class ArticleTests(BaseTest):
                                    self.like_status_update_data,
                                    format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_user_rates_own_article(self):
+        self.test_create_article()
+        self.client.post(signup_url,
+                         self.user2_signup_data,
+                         format="json")
+        user = User.objects.get(email=self.user2_login_data["user"]["email"])
+        uid = force_text(urlsafe_base64_encode(user.email.encode("utf8")))
+        activation_token = default_token_generator.make_token(user)
+        url = reverse("authentication:activate_account",
+                      args=(uid, activation_token,))
+        self.client.get(url, format="json")
+
+        login_response1 = self.client.post(
+            login_url, self.user2_login_data, format="json")
+        login_token = login_response1.data['token']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + login_token)
+        self.client.post(articles_url, self.data, format='json')
+
+        response = self.client.get(articles_url, self.data, format='json')
+        article = response.json()['article']['results'][0]
+
+        response = self.client.post("/api/articles/{}/rating".format(
+            article['id']),
+            self.article_score, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_user_rates_an_article_twice(self):
+        self.client.post(signup_url,
+                         self.user2_signup_data,
+                         format="json")
+        user = User.objects.get(email=self.user2_login_data["user"]["email"])
+        uid = force_text(urlsafe_base64_encode(user.email.encode("utf8")))
+        activation_token = default_token_generator.make_token(user)
+        url = reverse("authentication:activate_account",
+                      args=(uid, activation_token,))
+        self.client.get(url, format="json")
+
+        login_response = self.client.post(
+            login_url, self.user2_login_data, format="json")
+        login_token = login_response.data['token']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + login_token)
+
+        query_data = self.client.get(articles_url, self.data, format='json')
+        article = query_data.json()['article']['results'][0]
+        self.client.post("/api/articles/{}/rating".format(article['id']),
+                         self.article_score, format='json')
+        response = self.client.post("/api/articles/{}/rating".format(
+            article['id']),
+            self.article_score, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("You already rated this article",
+                      response.data['detail'])
+
+    def test_score_out_of_range(self):
+
+        response = self.client.post("/api/articles/2/rating",
+                                    self.out_of_range, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "Score value must not go below `0` and not go beyond `5`",
+            response.data['detail'])

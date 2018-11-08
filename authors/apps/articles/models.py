@@ -53,3 +53,12 @@ class LikeArticle(models.Model):
 
     def __str__(self):
         return self.like_status
+        
+class Rating(models.Model):
+
+    reader = models.ForeignKey(User, on_delete=models.CASCADE)
+    article = models.ForeignKey(Article, on_delete=models.CASCADE)
+    rating = models.IntegerField()
+
+    def __str__(self):
+        return self.rating

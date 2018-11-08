@@ -43,3 +43,12 @@ class ThreadRenderer(GeneralRenderer):
 class LikeStatusRenderer(GeneralRenderer):
     charset = 'utf-8'
     object_name = 'Like_status'
+    
+class RatingRenderer(JSONRenderer):
+
+    charset = 'utf-8'
+
+    def render(self, data, media_type=None, renderer_context=None):
+        return json.dumps({
+            "article_scores": data,
+        })
