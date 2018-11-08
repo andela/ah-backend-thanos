@@ -129,6 +129,14 @@ class AccountVerificationAPIView(generics.GenericAPIView):
                 return Response(message, status=status.HTTP_200_OK)
             user.is_verified = True
             user.save()
+            self.mail_subject = "Account Verification Confirmation."
+            self.message = """
+                Hi {},
+                Your Author Haven Account has been successfully verified.
+                Thank you
+                """.format(user.username)
+            SendEmail.send_email(self, self.mail_subject, self.message,
+                                 user.email)
             message = {
                 "message":
                 'Email confirmed. Now you can login your account.'}
@@ -187,10 +195,11 @@ class ResetPassword(generics.GenericAPIView):
             ).search(new_password)
                 is None):
             raise serializers.ValidationError(
-                                "Ensure your password is alphanumeric, with Minimum eight characters, at least one letter, one number and one special character",
-                                code=400
-                               )
-        print(new_password, confirm_password)
+                "Ensure your password is alphanumeric, with Minimum eight "
+                "characters, at least one letter, one number and one"
+                " special character",
+                code=400
+            )
         decode_token = jwt.decode(
             token, settings.SECRET_KEY, algorithms=['HS256'])
         user = User.objects.get(email=decode_token['email'])
