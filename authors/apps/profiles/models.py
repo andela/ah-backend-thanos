@@ -13,4 +13,6 @@ class Profile(TimeStampedModel):
     first_name = models.TextField(blank=True)
     last_name = models.TextField(blank=True)
 
+
+
     

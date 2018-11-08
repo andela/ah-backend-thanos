@@ -1,4 +1,6 @@
+
 from django.db import models
+from django.utils import timezone
 from authors.apps.authentication.models import User
 from authors.apps.profiles.models import Profile
 from django.contrib.postgres.fields import ArrayField
@@ -53,7 +55,8 @@ class LikeArticle(models.Model):
 
     def __str__(self):
         return self.like_status
-        
+
+
 class Rating(models.Model):
 
     reader = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -62,3 +65,10 @@ class Rating(models.Model):
 
     def __str__(self):
         return self.rating
+
+
+class Bookmark(models.Model):
+    user = models.ForeignKey(User, blank=False, on_delete=models.CASCADE)
+    article = models.ForeignKey(Article, blank=False, on_delete=models.CASCADE)
+    bookmarked_at = models.DateTimeField(auto_created=True,
+                                         auto_now=False, default=timezone.now)

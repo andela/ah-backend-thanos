@@ -103,3 +103,10 @@ class ArticleTests(BaseTest):
         self.assertEqual(response.status_code,
                          status.HTTP_200_OK)
         self.assertIn("Comment deleted sucessfully", str(response.data))
+
+    def test_can_bookmark_article(self):
+        """Test if the article has been bookmarked"""
+        self.res = self.client.post(
+            self.url, self.data, format='json')
+        result = self.client.post(self.bookmark_url, format="json")
+        self.assertEqual(result.status_code, status.HTTP_201_CREATED)
