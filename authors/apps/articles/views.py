@@ -1,15 +1,20 @@
 import time
+import re
 
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework import generics
 from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 
-from .models import Article
-from .renderers import ArticleRenderer
-from .serializers import ArticleSerializer, ArticlesUpdateSerializer
-
+from .models import Article, Comment, Thread
+from .renderers import ArticleRenderer, CommentRenderer, ThreadRenderer
+from .serializers import (ArticleSerializer,
+                          ArticlesUpdateSerializer,
+                          CommentSerializer,
+                          ThreadCreateSerializer,
+                          )
 from authors.apps.core.utils.generate_slug import generate_slug
 from authors.apps.core.utils.user_management import (
     get_id_from_token,
@@ -34,6 +39,14 @@ class ArticlesListCreateAPIView(generics.ListCreateAPIView):
         tag_list = request.data.get('tag_list')
         image_url = request.data.get('image_url')
         audio_url = request.data.get('audio_url')
+
+        # slug: Allow only alphanumeric values and dashes for spaces
+        slug = ''
+        for i in re.split(r'(.)', title.strip().lower()):
+            if i.isalnum():
+                slug += i
+            elif i == ' ':
+                slug += '-'
 
         author_id, author_username = get_id_from_token(request)
 
@@ -119,3 +132,95 @@ class ArticleRetrieveBySlugAPIView(generics.RetrieveAPIView):
     renderer_classes = (ArticleRenderer,)
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     lookup_field = 'slug'
+
+
+class CommentListCreateView(generics.ListCreateAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    renderer_classes = (CommentRenderer,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+    def create(self, request, pk, *args, **kwargs):
+        serializer_context = {
+            'author': request.user.profile,
+            'article': get_object_or_404(Article, id=pk)
+        }
+        serializer_data = request.data.get('comments', {})
+        serializer = self.serializer_class(
+            context=serializer_context,
+            data=serializer_data,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def list(self, request, *args, **kwargs):
+        if not Article.objects.filter(pk=kwargs['pk']).exists():
+            raise NotFound(detail="Sorry this article doesn't exist", code=404)
+
+        comment = Comment.objects.filter(article=kwargs['pk'])
+        if not comment:
+            raise NotFound(
+                detail="Sorry there are no comments for this article",
+                code=404)
+        serializer = self.serializer_class(comment, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ThreadListCreateView(generics.ListCreateAPIView):
+    queryset = Thread.objects.all()
+    serializer_class = ThreadCreateSerializer
+    renderer_classes = (ThreadRenderer,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+    def create(self, request, *args, **kwargs):
+        serializer_context = {
+            'author': request.user.profile,
+            'comment': get_object_or_404(Comment, id=kwargs['id'])
+        }
+        serializer_data = request.data.get('threads', {})
+        serializer = self.serializer_class(
+            context=serializer_context,
+            data=serializer_data,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def list(self, request, *args, **kwargs):
+        if not Comment.objects.filter(pk=kwargs['id']).exists():
+            raise NotFound(
+                detail="Sorry this comment doesn't exist", code=404)
+
+        threads = Thread.objects.filter(comment=kwargs['id'])
+        if not threads:
+            raise NotFound(
+                detail="Sorry there are no thread comments for this article")
+        serializer = self.serializer_class(threads, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class CommentRetrieveDeleteView(generics.RetrieveDestroyAPIView):
+    """Retrive and Delete a comment"""
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    renderer_classes = (CommentRenderer,)
+    serializer_class = CommentSerializer
+
+    def get(self, request, *args, **kwargs):
+
+        comment = get_object_or_404(Comment, id=kwargs['id'])
+
+        serializer = self.serializer_class(comment)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def destroy(self, request, *args, **kwargs):
+        if not Comment.objects.filter(pk=kwargs['id']).exists():
+            raise NotFound(detail="Not found")
+
+        comment = Comment.objects.get(pk=kwargs['id'])
+        author_id, username = get_id_from_token(request)
+        validate_author(author_id, comment.author.id)
+        self.perform_destroy(comment)
+        return Response({"message": "Comment deleted sucessfully"},
+                        status=status.HTTP_200_OK)

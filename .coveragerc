@@ -16,3 +16,4 @@ omit =
     */wsgi.py
     */.vscode/*
     */tests/*
+    */manage.py/*

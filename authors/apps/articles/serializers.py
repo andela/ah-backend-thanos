@@ -1,8 +1,9 @@
 from rest_framework import serializers
-from .models import Article
-from rest_framework.exceptions import NotFound
-from authors.apps.authentication.models import User
+from .models import Article, Comment, Thread
+
 from .validators import Validator
+
+from ..core.utils.generate_author_details import to_represent_article
 
 
 class ArticleSerializer(serializers.ModelSerializer):
@@ -14,16 +15,8 @@ class ArticleSerializer(serializers.ModelSerializer):
         '''
         Show author's actual details instead of author's id
         '''
-        article_details = super(ArticleSerializer,
-                                self).to_representation(data)
-        if User.objects.filter(pk=int(article_details["author"])).exists():
-            user_details = User.objects.get(pk=int(article_details["author"]))
-            article_details["author"] = {
-                "id": user_details.id,
-                "username": user_details.username,
-                "email": user_details.email}
-            return article_details
-        raise NotFound(detail="User does not exist", code=404)
+        article_details = super().to_representation(data)
+        return to_represent_article(article_details)
 
     def validate(self, data):
         validator = Validator
@@ -45,3 +38,56 @@ class ArticlesUpdateSerializer(serializers.ModelSerializer):
         model = Article
         fields = ['slug', 'title', 'description', 'body',
                   'tag_list', 'image_url', 'audio_url']
+
+
+class CommentSerializer(serializers.ModelSerializer):
+
+    def to_representation(self, data):
+
+        comment_details = super().to_representation(data)
+
+        return to_represent_article(comment_details)
+
+    def validate(self, data):
+        validator = Validator
+        comment_body = data.get("comment_body", None)
+
+        validator.starts_with_letter("comment_body", comment_body)
+        return data
+
+    def create(self, validated_data):
+        author = self.context.get('author', None)
+        article = self.context.get('article', None)
+        comment = Comment.objects.create(
+            author=author,
+            article=article,
+            **validated_data
+        )
+        return comment
+
+    class Meta:
+        model = Comment
+        fields = ('id', 'comment_body', 'author',
+                  'created_at', 'updated_at')
+
+        read_only_fields = ('author',)
+
+
+class ThreadCreateSerializer(serializers.ModelSerializer):
+
+    def create(self, validated_data):
+        author = self.context.get('author', None)
+        comment = self.context.get('comment', None)
+        thread = Thread.objects.create(
+            author=author,
+            comment=comment,
+            **validated_data
+        )
+        return thread
+
+    class Meta:
+        model = Thread
+        fields = ('id', 'thread_body', 'author', 'comment',
+                  'created_at', 'updated_at')
+
+        read_only_fields = ('author', 'comment')

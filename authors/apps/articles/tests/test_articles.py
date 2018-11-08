@@ -1,6 +1,7 @@
 from rest_framework.test import APITestCase
 from rest_framework import status
 from rest_framework.reverse import reverse
+from rest_framework.exceptions import AuthenticationFailed
 
 from django.contrib.auth import get_user_model
 from django.utils.encoding import force_text
@@ -8,6 +9,7 @@ from django.utils.http import urlsafe_base64_encode
 from django.contrib.auth.tokens import default_token_generator
 
 from authors.apps.articles.models import Article
+from authors.apps.core.utils.user_management import validate_author
 
 User = get_user_model()
 articles_url = reverse("articles:list_create")
@@ -86,15 +88,6 @@ class ArticleTests(APITestCase):
         self.assertIn("How to train your Dragon", str(response.data))
         self.assertEqual(len(articles), 1)
 
-    def test_get_two_articles(self):
-        # first create an article
-        self.test_create_article()
-        self.test_create_article()
-        articles = Article.objects.all()
-        response = self.client.get(articles_url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(articles), 2)
-
     def test_get_article_by_id(self):
         self.test_create_article()
         article = Article.objects.all().first()
@@ -146,7 +139,7 @@ class ArticleTests(APITestCase):
         self.assertIn("Invalid/expired token", str(response.data))
 
     def test_article_not_found(self):
-        response = self.client.put("/api/articles/1",
+        response = self.client.put("/api/articles/100000",
                                    self.edit_data,
                                    format='json')
         self.assertIn("Article Not found", str(response.data))
@@ -160,14 +153,34 @@ class ArticleTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("Article deleted sucessfully", str(response.data))
 
+    def test_delete_article_not_found(self):
+        self.test_create_article()
+        response = self.client.delete("/api/articles/{}".format(100),
+                                      format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn("Article Not found", str(response.data))
+
+    def test_get_article_title(self):
+        """ Test model method to get article title """
+        self.title = self.data["title"]
+        title = self.title.__str__()
+        self.assertEqual(title, "How to train your Dragon")
+
+    def test_validate_author(self):
+        """Test that user can be registered as a super user"""
+        self.assertRaises(AuthenticationFailed, lambda: validate_author(
+            author_id="superuser", current_user_id=self.client.credentials))
+
     def test_invalid_page_number(self):
         self.test_create_article()
-        articles_url = '/api/articles?page=3'
+        articles_url = '/api/articles/?page=3'
         response = self.client.get(articles_url, format='json')
+
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_valid_page_number(self):
         self.test_create_article()
-        articles_url = '/api/articles?page=1'
+        articles_url = '/api/articles/?page=1'
         response = self.client.get(articles_url, format='json')
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)

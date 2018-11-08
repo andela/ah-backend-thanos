@@ -3,6 +3,8 @@ from rest_framework.renderers import JSONRenderer
 from .models import Article
 from rest_framework.utils.serializer_helpers import ReturnList
 
+from ..core.utils.generate_renderer import GeneralRenderer
+
 
 class ArticleRenderer(JSONRenderer):
     charset = 'utf-8'
@@ -16,7 +18,7 @@ class ArticleRenderer(JSONRenderer):
         if type(data) != ReturnList:
             errors = data.get('errors', None)
             if errors is not None:
-                return super(ArticleRenderer, self).render(data)
+                return super().render(data)
             else:
                 return json.dumps({
                     'article': data
@@ -26,3 +28,13 @@ class ArticleRenderer(JSONRenderer):
                 'articles': data,
                 'articlesCount': len(Article.objects.all())
             })
+
+
+class CommentRenderer(GeneralRenderer):
+    charset = 'utf-8'
+    object_name = 'comments'
+
+
+class ThreadRenderer(GeneralRenderer):
+    charset = 'utf-8'
+    object_name = 'threads'

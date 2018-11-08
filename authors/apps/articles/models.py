@@ -1,6 +1,10 @@
 from django.db import models
 from authors.apps.authentication.models import User
+from authors.apps.profiles.models import Profile
 from django.contrib.postgres.fields import ArrayField
+
+
+from ..core.models import TimeStampedModel
 
 
 class Article(models.Model):
@@ -17,8 +21,19 @@ class Article(models.Model):
     image_url = models.URLField(blank=False)
     audio_url = models.URLField(blank=True, null=True)
 
-    def __str__(self):
-        return self.title
-
     class Meta:
         ordering = ['-updated_at']
+
+
+class Comment(TimeStampedModel):
+    """Defines the descriptive data for the different comments created"""
+    comment_body = models.TextField(blank=False)
+    author = models.ForeignKey('profiles.Profile', on_delete=models.CASCADE)
+    article = models.ForeignKey(Article, on_delete=models.CASCADE)
+
+
+class Thread (TimeStampedModel):
+    """Defines the descriptive data for the different comments created"""
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE)
+    thread_body = models.TextField(blank=False)
+    author = models.ForeignKey(Profile, on_delete=models.CASCADE)
