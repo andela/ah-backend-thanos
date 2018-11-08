@@ -86,6 +86,15 @@ class ArticleTests(APITestCase):
         self.assertIn("How to train your Dragon", str(response.data))
         self.assertEqual(len(articles), 1)
 
+    def test_get_two_articles(self):
+        # first create an article
+        self.test_create_article()
+        self.test_create_article()
+        articles = Article.objects.all()
+        response = self.client.get(articles_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(articles), 2)
+
     def test_get_article_by_id(self):
         self.test_create_article()
         article = Article.objects.all().first()
@@ -150,3 +159,15 @@ class ArticleTests(APITestCase):
                                       format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("Article deleted sucessfully", str(response.data))
+
+    def test_invalid_page_number(self):
+        self.test_create_article()
+        articles_url = '/api/articles?page=3'
+        response = self.client.get(articles_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_valid_page_number(self):
+        self.test_create_article()
+        articles_url = '/api/articles?page=1'
+        response = self.client.get(articles_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
