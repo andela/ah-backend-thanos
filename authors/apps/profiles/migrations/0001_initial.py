@@ -15,16 +15,35 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
+            name='Follow',
+            fields=[
+                ('id', models.AutoField(auto_created=True,
+                                        primary_key=True,
+                                        serialize=False, verbose_name='ID')),
+                ('followee', models.ForeignKey(
+                    on_delete=django.db.models.deletion.CASCADE,
+                    to=settings.AUTH_USER_MODEL)),
+                ('follower', models.ForeignKey(
+                    on_delete=django.db.models.deletion.CASCADE,
+                    related_name='follow_user_a',
+                    to=settings.AUTH_USER_MODEL)),
+            ],
+        ),
+        migrations.CreateModel(
             name='Profile',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(auto_created=True,
+                                        primary_key=True, serialize=False,
+                                        verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('bio', models.TextField(blank=True)),
                 ('image', models.URLField(blank=True)),
                 ('first_name', models.TextField(blank=True)),
                 ('last_name', models.TextField(blank=True)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                ('user', models.OneToOneField(
+                    on_delete=django.db.models.deletion.CASCADE,
+                    to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'abstract': False,

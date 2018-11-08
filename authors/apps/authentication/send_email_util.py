@@ -25,6 +25,3 @@ class SendEmail():
                         content)  # pragma: no cover
             response = sg.client.mail.send.post(
                 request_body=mail.get())  # pragma: no cover
-            print(response.status_code)  # pragma: no cover
-            print(response.body)  # pragma: no cover
-            print(response.headers)  # pragma: no cover
