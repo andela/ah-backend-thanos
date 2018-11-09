@@ -17,7 +17,6 @@ from .serializers import (ArticleSerializer, ArticlesUpdateSerializer,
                           RatingSerializer, BookmarkSerializer)
 from rest_framework.exceptions import (NotAcceptable, NotFound,
                                        ParseError,)
-from rest_framework.exceptions import NotFound
 
 
 from authors.apps.core.utils.generate_slug import generate_slug
@@ -25,7 +24,6 @@ from authors.apps.core.utils.user_management import (
     get_id_from_token,
     validate_author
 )
-
 
 
 class ArticlesListCreateAPIView(generics.ListCreateAPIView):
@@ -141,15 +139,19 @@ class ArticleRetrieveBySlugAPIView(generics.RetrieveAPIView):
 
 
 class CommentListCreateView(generics.ListCreateAPIView):
+    """
+    post: Create a Comment
+    get: Get all Comments
+    """
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     renderer_classes = (CommentRenderer,)
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
-    def create(self, request, pk, *args, **kwargs):
+    def create(self, request, article_id, *args, **kwargs):
         serializer_context = {
-            'author': request.user.profile,
-            'article': get_object_or_404(Article, id=pk)
+            'comment_author': request.user.profile,
+            'article': get_object_or_404(Article, id=article_id)
         }
         serializer_data = request.data.get('comments', {})
         serializer = self.serializer_class(
@@ -161,10 +163,10 @@ class CommentListCreateView(generics.ListCreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def list(self, request, *args, **kwargs):
-        if not Article.objects.filter(pk=kwargs['pk']).exists():
+        if not Article.objects.filter(pk=kwargs['article_id']).exists():
             raise NotFound(detail="Sorry this article doesn't exist", code=404)
 
-        comment = Comment.objects.filter(article=kwargs['pk'])
+        comment = Comment.objects.filter(article=kwargs['article_id'])
         if not comment:
             raise NotFound(
                 detail="Sorry there are no comments for this article",
@@ -176,6 +178,7 @@ class CommentListCreateView(generics.ListCreateAPIView):
 class LikeAPIView(generics.GenericAPIView):
     """
     post: Create an  like or dislike.
+    get: Get Like Status
     """
     serializer_class = LikeSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
@@ -217,6 +220,10 @@ class LikeAPIView(generics.GenericAPIView):
 
 
 class ThreadListCreateView(generics.ListCreateAPIView):
+    """
+    post: Create a thread on a comment
+    get: List/Show comment thread
+    """
     queryset = Thread.objects.all()
     serializer_class = ThreadCreateSerializer
     renderer_classes = (ThreadRenderer,)
@@ -224,8 +231,8 @@ class ThreadListCreateView(generics.ListCreateAPIView):
 
     def create(self, request, *args, **kwargs):
         serializer_context = {
-            'author': request.user.profile,
-            'comment': get_object_or_404(Comment, id=kwargs['id'])
+            'thread_author': request.user.profile,
+            'comment': get_object_or_404(Comment, id=kwargs['comment_id'])
         }
         serializer_data = request.data.get('threads', {})
         serializer = self.serializer_class(
@@ -236,11 +243,11 @@ class ThreadListCreateView(generics.ListCreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def list(self, request, *args, **kwargs):
-        if not Comment.objects.filter(pk=kwargs['id']).exists():
+        if not Comment.objects.filter(pk=kwargs['comment_id']).exists():
             raise NotFound(
                 detail="Sorry this comment doesn't exist", code=404)
 
-        threads = Thread.objects.filter(comment=kwargs['id'])
+        threads = Thread.objects.filter(comment=kwargs['comment_id'])
         if not threads:
             raise NotFound(
                 detail="Sorry there are no thread comments for this article")
@@ -248,33 +255,29 @@ class ThreadListCreateView(generics.ListCreateAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class CommentRetrieveDeleteView(generics.RetrieveDestroyAPIView):
-    """Retrive and Delete a comment"""
+class CommentDeleteView(generics.DestroyAPIView):
+    """Delete a comment"""
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     renderer_classes = (CommentRenderer,)
     serializer_class = CommentSerializer
 
-    def get(self, request, *args, **kwargs):
-
-        comment = get_object_or_404(Comment, id=kwargs['id'])
-
-        serializer = self.serializer_class(comment)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
     def destroy(self, request, *args, **kwargs):
-        if not Comment.objects.filter(pk=kwargs['id']).exists():
-            raise NotFound(detail="Not found")
+        if not Comment.objects.filter(pk=kwargs['comment_id'],
+                                      article=kwargs['article_id']).exists():
+            raise NotFound(detail=" Comment Not found")
 
-        comment = Comment.objects.get(pk=kwargs['id'])
+        comment = Comment.objects.get(pk=kwargs['comment_id'])
         author_id, username = get_id_from_token(request)
-        validate_author(author_id, comment.author.id)
+        validate_author(author_id, comment.comment_author.id)
         self.perform_destroy(comment)
         return Response({"message": "Comment deleted sucessfully"},
                         status=status.HTTP_200_OK)
 
 
 class UpdateLikeStatusAPIView(generics.RetrieveUpdateAPIView):
+    """
+    put: Update Status
+    """
     serializer_class = LikeSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     renderer_classes = (LikeStatusRenderer,)
@@ -345,6 +348,10 @@ class ArticleRating(generics.ListCreateAPIView):
 
 
 class BookmarkListCreateView(generics.ListCreateAPIView):
+    """
+    get: List Bookmarks
+    post: Bookmark an Article
+    """
     queryset = Bookmark.objects.all()
     serializer_class = BookmarkSerializer
     renderer_classes = (BookmarkRenderer,)
@@ -367,14 +374,17 @@ class BookmarkListCreateView(generics.ListCreateAPIView):
 
 
 class BookmarkDestroyView(generics.DestroyAPIView):
+    """
+    delete: Delete a Bookmark
+    """
     queryset = Article.objects.all()
     serializer_class = BookmarkSerializer
     renderer_classes = (BookmarkRenderer,)
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
-    lookup_field = 'id'
+    lookup_field = 'article_id'
 
     def destroy(self, request, *args, **kwargs):
-        bookmark = Bookmark.objects.filter(article_id=kwargs['id'],
+        bookmark = Bookmark.objects.filter(article_id=kwargs['article_id'],
                                            user=request.user.id).first()
         if not bookmark:
             return Response({"message": "This bookmark doesn\'t exist"}, 204)

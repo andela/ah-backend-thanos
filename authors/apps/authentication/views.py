@@ -1,3 +1,4 @@
+from authors.apps.profiles.models import Profile
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -43,16 +44,18 @@ def get_data_pipeline(backend, response, *args, **kwargs):  # pragma: no cover
     try:  # pragma: no cover
         global auth_user
         auth_user = User.objects.get(email=email)
-    except(TypeError, ValueError, OverflowError, User.DoesNotExist):  # pragma: no cover
+    except(TypeError, ValueError, OverflowError, User.DoesNotExist):
         auth_user = None
 
     if auth_user:  # pragma: no cover
         auth_user.token
     else:  # pragma: no cover
-        auth_user = User(email=email, username=username)
+        auth_user = User(username=username, email=email)
         password = User.objects.make_random_password()
         auth_user.set_password(password)
         auth_user.save()
+        auth_user.profile = Profile()
+        auth_user.profile.save()
         auth_user.is_verified = True
         auth_user.token
 
@@ -84,7 +87,7 @@ class RegistrationAPIView(generics.CreateAPIView):
         self.message = """
             Hi {},
             Please click on the link to confirm your registration,
-            {}://{}/api/user/activate/{}/{}""".format(user.username,
+            {}://{}/api/users/activate/{}/{}""".format(user.username,
                                                       request.scheme,
                                                       request.get_host(),
                                                       uid,
@@ -197,7 +200,7 @@ class SendEmailPasswordReset(generics.CreateAPIView):
         self.message = """
             Hi,
             Please click on the link to reset your password,
-            {}://{}/api/user/reset_password/{}""".format(request.scheme,
+            {}://{}/api/users/reset_password/{}""".format(request.scheme,
                                                          request.get_host(),
                                                          reset_password_token)
         SendEmail.send_email(self, self.mail_subject, self.message, email)

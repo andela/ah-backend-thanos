@@ -3,7 +3,7 @@ from rest_framework import status
 
 
 from .Basetest import BaseTest
-from ..models import Comment
+
 
 articles_url = reverse("articles:list_create")
 
@@ -21,15 +21,6 @@ class ArticleTests(BaseTest):
         self.client.post(self.url, self.comment_data,
                          format='json')
         response = self.client.get(self.url,
-                                   format='json')
-        self.assertEqual(response.status_code,
-                         status.HTTP_200_OK)
-
-    def test_get_single_comment(self):
-        """Test user can get a  single comment"""
-        self.client.post(self.url, self.comment_data,
-                         format='json')
-        response = self.client.get(self.single_comm_url,
                                    format='json')
         self.assertEqual(response.status_code,
                          status.HTTP_200_OK)
@@ -96,10 +87,8 @@ class ArticleTests(BaseTest):
 
     def test_delete_comment(self):
         self.test_create_comment()
-        comment = Comment.objects.all().first()
-        response = self.client.delete(
-            "/api/articles/8/comments/{}".format(comment.pk),
-            format='json')
+        response = self.client.delete(self.single_comm_url,
+                                      format='json')
         self.assertEqual(response.status_code,
                          status.HTTP_200_OK)
         self.assertIn("Comment deleted sucessfully", str(response.data))
@@ -110,3 +99,10 @@ class ArticleTests(BaseTest):
             self.url, self.data, format='json')
         result = self.client.post(self.bookmark_url, format="json")
         self.assertEqual(result.status_code, status.HTTP_201_CREATED)
+
+    def test_delete_bookmark(self):
+        """Test if the bookmark can be deleted"""
+        self.test_can_bookmark_article()
+        result = self.client.delete(self.unbookmark_url, format='json')
+        self.assertEqual(result.status_code, status.HTTP_200_OK)
+        self.assertIn("Bookmark succesfully deleted", str(result.data))
