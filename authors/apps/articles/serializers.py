@@ -81,10 +81,10 @@ class CommentSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        author = self.context.get('author', None)
+        author = self.context.get('comment_author', None)
         article = self.context.get('article', None)
         comment = Comment.objects.create(
-            author=author,
+            comment_author=author,
             article=article,
             **validated_data
         )
@@ -92,19 +92,19 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ('id', 'comment_body', 'author',
+        fields = ('id', 'comment_body', 'comment_author',
                   'created_at', 'updated_at')
 
-        read_only_fields = ('author',)
+        read_only_fields = ('comment_author',)
 
 
 class ThreadCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
-        author = self.context.get('author', None)
+        author = self.context.get('thread_author', None)
         comment = self.context.get('comment', None)
         thread = Thread.objects.create(
-            author=author,
+            thread_author=author,
             comment=comment,
             **validated_data
         )
@@ -112,10 +112,10 @@ class ThreadCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Thread
-        fields = ('id', 'thread_body', 'author', 'comment',
+        fields = ('id', 'thread_body', 'thread_author',
                   'created_at', 'updated_at')
 
-        read_only_fields = ('author', 'comment')
+        read_only_fields = ('thread_author',)
 
 
 class LikeSerializer(serializers.ModelSerializer):

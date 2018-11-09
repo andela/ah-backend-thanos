@@ -3,7 +3,7 @@ from django.urls import path
 from .views import (
     ArticlesListCreateAPIView, ArticleRetrieveUpdateDestroy,
     ArticleRetrieveBySlugAPIView, CommentListCreateView,
-    ThreadListCreateView, CommentRetrieveDeleteView, LikeAPIView,
+    ThreadListCreateView, CommentDeleteView, LikeAPIView,
     UpdateLikeStatusAPIView, BookmarkListCreateView,
     BookmarkDestroyView, ArticleRating,)
 
@@ -17,12 +17,12 @@ urlpatterns = [
     # GET api/articles/slug
     path('articles/<slug:slug>', ArticleRetrieveBySlugAPIView.as_view(),
          name='article_by_slug'),
-    path('articles/<int:pk>/comments', CommentListCreateView.as_view(),
+    path('articles/<int:article_id>/comments', CommentListCreateView.as_view(),
          name='comment_on_article'),
-    path('articles/<int:pk>/comments/<int:id>',
-         CommentRetrieveDeleteView.as_view(),
+    path('articles/<int:article_id>/comments/<int:comment_id>',
+         CommentDeleteView.as_view(),
          name='comment_by_id'),
-    path('articles/<int:pk>/comments/<int:id>/threads',
+    path('articles/<int:article_id>/comments/<int:comment_id>/threads',
          ThreadListCreateView.as_view(),
          name='comment_on_comment'),
     path('articles/<int:pk>/like_status', LikeAPIView.as_view(),
@@ -37,6 +37,6 @@ urlpatterns = [
     path('articles/<int:pk>/bookmarks', BookmarkListCreateView.as_view(),
          name='create_bookmark'),
 
-    path('articles/<int:pk>/bookmarks/<int:id>', BookmarkDestroyView.as_view(),
+    path('articles/<int:article_id>/bookmark', BookmarkDestroyView.as_view(),
          name='un_bookmark'),
 ]

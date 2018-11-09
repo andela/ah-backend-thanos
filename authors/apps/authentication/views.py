@@ -1,3 +1,4 @@
+from authors.apps.profiles.models import Profile
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -43,16 +44,18 @@ def get_data_pipeline(backend, response, *args, **kwargs):  # pragma: no cover
     try:  # pragma: no cover
         global auth_user
         auth_user = User.objects.get(email=email)
-    except(TypeError, ValueError, OverflowError, User.DoesNotExist):  # pragma: no cover
+    except(TypeError, ValueError, OverflowError, User.DoesNotExist):
         auth_user = None
 
     if auth_user:  # pragma: no cover
         auth_user.token
     else:  # pragma: no cover
-        auth_user = User(email=email, username=username)
+        auth_user = User(username=username, email=email)
         password = User.objects.make_random_password()
         auth_user.set_password(password)
         auth_user.save()
+        auth_user.profile = Profile()
+        auth_user.profile.save()
         auth_user.is_verified = True
         auth_user.token
 

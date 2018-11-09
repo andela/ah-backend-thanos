@@ -30,7 +30,7 @@ class Article(models.Model):
 class Comment(TimeStampedModel):
     """Defines the descriptive data for the different comments created"""
     comment_body = models.TextField(blank=False)
-    author = models.ForeignKey('profiles.Profile', on_delete=models.CASCADE)
+    comment_author = models.ForeignKey('profiles.Profile', on_delete=models.CASCADE)
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
 
 
@@ -38,7 +38,7 @@ class Thread (TimeStampedModel):
     """Defines the descriptive data for the different comments created"""
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE)
     thread_body = models.TextField(blank=False)
-    author = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    thread_author = models.ForeignKey(Profile, on_delete=models.CASCADE)
 
 
 class LikeArticle(models.Model):
