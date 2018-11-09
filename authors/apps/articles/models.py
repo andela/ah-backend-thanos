@@ -30,7 +30,8 @@ class Article(models.Model):
 class Comment(TimeStampedModel):
     """Defines the descriptive data for the different comments created"""
     comment_body = models.TextField(blank=False)
-    comment_author = models.ForeignKey('profiles.Profile', on_delete=models.CASCADE)
+    comment_author = models.ForeignKey('profiles.Profile',
+                                       on_delete=models.CASCADE)
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
 
 
@@ -61,7 +62,7 @@ class Rating(models.Model):
 
     reader = models.ForeignKey(User, on_delete=models.CASCADE)
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
-    rating = models.IntegerField()
+    rating = models.IntegerField(default=0, null=False, blank=False)
 
     def __str__(self):
         return self.rating

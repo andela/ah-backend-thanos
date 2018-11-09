@@ -87,7 +87,7 @@ class RegistrationAPIView(generics.CreateAPIView):
         self.message = """
             Hi {},
             Please click on the link to confirm your registration,
-            {}://{}/api/user/activate/{}/{}""".format(user.username,
+            {}://{}/api/users/activate/{}/{}""".format(user.username,
                                                       request.scheme,
                                                       request.get_host(),
                                                       uid,
@@ -200,7 +200,7 @@ class SendEmailPasswordReset(generics.CreateAPIView):
         self.message = """
             Hi,
             Please click on the link to reset your password,
-            {}://{}/api/user/reset_password/{}""".format(request.scheme,
+            {}://{}/api/users/reset_password/{}""".format(request.scheme,
                                                          request.get_host(),
                                                          reset_password_token)
         SendEmail.send_email(self, self.mail_subject, self.message, email)

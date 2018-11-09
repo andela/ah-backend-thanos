@@ -17,7 +17,6 @@ from .serializers import (ArticleSerializer, ArticlesUpdateSerializer,
                           RatingSerializer, BookmarkSerializer)
 from rest_framework.exceptions import (NotAcceptable, NotFound,
                                        ParseError,)
-from rest_framework.exceptions import NotFound
 
 
 from authors.apps.core.utils.generate_slug import generate_slug
@@ -140,6 +139,10 @@ class ArticleRetrieveBySlugAPIView(generics.RetrieveAPIView):
 
 
 class CommentListCreateView(generics.ListCreateAPIView):
+    """
+    post: Create a Comment
+    get: Get all Comments
+    """
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     renderer_classes = (CommentRenderer,)
@@ -175,6 +178,7 @@ class CommentListCreateView(generics.ListCreateAPIView):
 class LikeAPIView(generics.GenericAPIView):
     """
     post: Create an  like or dislike.
+    get: Get Like Status
     """
     serializer_class = LikeSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
@@ -216,6 +220,10 @@ class LikeAPIView(generics.GenericAPIView):
 
 
 class ThreadListCreateView(generics.ListCreateAPIView):
+    """
+    post: Create a thread on a comment
+    get: List/Show comment thread
+    """
     queryset = Thread.objects.all()
     serializer_class = ThreadCreateSerializer
     renderer_classes = (ThreadRenderer,)
@@ -248,7 +256,7 @@ class ThreadListCreateView(generics.ListCreateAPIView):
 
 
 class CommentDeleteView(generics.DestroyAPIView):
-    """Retrive and Delete a comment"""
+    """Delete a comment"""
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     renderer_classes = (CommentRenderer,)
     serializer_class = CommentSerializer
@@ -267,6 +275,9 @@ class CommentDeleteView(generics.DestroyAPIView):
 
 
 class UpdateLikeStatusAPIView(generics.RetrieveUpdateAPIView):
+    """
+    put: Update Status
+    """
     serializer_class = LikeSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     renderer_classes = (LikeStatusRenderer,)
@@ -337,6 +348,10 @@ class ArticleRating(generics.ListCreateAPIView):
 
 
 class BookmarkListCreateView(generics.ListCreateAPIView):
+    """
+    get: List Bookmarks
+    post: Bookmark an Article
+    """
     queryset = Bookmark.objects.all()
     serializer_class = BookmarkSerializer
     renderer_classes = (BookmarkRenderer,)
@@ -359,6 +374,9 @@ class BookmarkListCreateView(generics.ListCreateAPIView):
 
 
 class BookmarkDestroyView(generics.DestroyAPIView):
+    """
+    delete: Delete a Bookmark
+    """
     queryset = Article.objects.all()
     serializer_class = BookmarkSerializer
     renderer_classes = (BookmarkRenderer,)
