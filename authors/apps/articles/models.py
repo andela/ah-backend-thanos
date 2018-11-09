@@ -61,7 +61,7 @@ class Rating(models.Model):
 
     reader = models.ForeignKey(User, on_delete=models.CASCADE)
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
-    rating = models.IntegerField()
+    rating = models.IntegerField(default=0, null=False, blank=False)
 
     def __str__(self):
         return self.rating

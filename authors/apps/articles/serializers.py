@@ -39,7 +39,12 @@ class ArticleSerializer(serializers.ModelSerializer):
             article_details["likes"] = likes
             article_details["dislikes"] = dislikes
             article_details["rating"] = rating['rating__avg']
+            if article_details["rating"] is not None:
+                article_details["rating"] = round(rating['rating__avg'], 1)
+            else:
+                article_details["rating"] = 0
             return article_details
+            
         raise NotFound(detail="User does not exist", code=404)
 
     def validate(self, data):
