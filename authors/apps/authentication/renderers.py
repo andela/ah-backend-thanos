@@ -11,7 +11,7 @@ class UserJSONRenderer(JSONRenderer):
         # or something similar), `data` will contain an `errors` key. We want
         # the default JSONRenderer to handle rendering errors, so we need to
         # check for this case.
-        errors = data.get('errors', None)
+        errors = data.get('results', None)
 
         # Here we get the token
         token = data.get('token', None)

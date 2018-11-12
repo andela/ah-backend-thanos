@@ -241,9 +241,9 @@ class CommentListCreateView(generics.ListCreateAPIView):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def list(self, request, *args, **kwargs):
-        article_id = kwargs['article_id']
-        article_not_found(article_id)
+    def get(self, request, *args, **kwargs):
+        if not Article.objects.filter(pk=kwargs['article_id']).exists():
+            raise NotFound(detail="Sorry this article doesn't exist", code=404)
 
         comment = Comment.objects.filter(article=kwargs['article_id'])
         if not comment:
@@ -341,7 +341,7 @@ class ThreadListCreateView(generics.ListCreateAPIView):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def list(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         if not Comment.objects.filter(pk=kwargs['comment_id']).exists():
             raise NotFound(
                 detail="Sorry this comment doesn't exist", code=404)
@@ -451,7 +451,8 @@ class BookmarkDestroyView(generics.DestroyAPIView):
         bookmark = Bookmark.objects.filter(article_id=kwargs['article_id'],
                                            user=request.user.id).first()
         if not bookmark:
-            return Response({"message": "This bookmark doesn\'t exist"}, 204)
+            return Response({"message": "This bookmark doesn\'t exist"},
+                            status=status.HTTP_400_BAD_REQUEST)
         self.perform_destroy(bookmark)
         return Response({"message": "Bookmark succesfully deleted"}, 200)
 

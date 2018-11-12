@@ -30,7 +30,7 @@ class UserApiTestCase(BaseTestCase):
         self.assertEqual(self.response.status_code,
                          status.HTTP_400_BAD_REQUEST)
         self.assertEqual(["Enter a valid email address."],
-                         self.response.data["errors"]["email"])
+                         self.response.data["results"]["email"])
 
     def test_register_with_invalid_username(self):
         self.response = self.client.post(signup_url,
@@ -54,7 +54,7 @@ class UserApiTestCase(BaseTestCase):
                          status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
             ["Ensure this field has at least 8 characters."],
-            self.response.data["errors"]["password"],
+            self.response.data["results"]["password"],
         )
 
     def test_password_not_alphanumeric(self):
@@ -71,7 +71,7 @@ class UserApiTestCase(BaseTestCase):
         self.assertEqual(self.response.status_code,
                          status.HTTP_400_BAD_REQUEST)
         self.assertIn('This field may not be blank.',
-                      self.response.data["errors"]["username"])
+                      self.response.data["results"]["username"])
 
     def test_get_short_name(self):
         """ Test model method to get username """

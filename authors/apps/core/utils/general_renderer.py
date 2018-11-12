@@ -6,7 +6,7 @@ from rest_framework.utils.serializer_helpers import ReturnList
 class GeneralRenderer(JSONRenderer):
     def render(self, data,  media_type=None, renderer_context=None):
         if type(data) != ReturnList:
-            errors = data.get('errors', None)
+            errors = data.get('results', None)
             if errors is not None:
                 return super().render(data)
             else:
