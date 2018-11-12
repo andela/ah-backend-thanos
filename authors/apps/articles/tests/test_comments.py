@@ -3,6 +3,7 @@ from rest_framework import status
 
 
 from .Basetest import BaseTest
+from authors.apps.articles.models import Article
 
 
 articles_url = reverse("articles:list_create")
@@ -106,3 +107,21 @@ class ArticleTests(BaseTest):
         result = self.client.delete(self.unbookmark_url, format='json')
         self.assertEqual(result.status_code, status.HTTP_200_OK)
         self.assertIn("Bookmark succesfully deleted", str(result.data))
+
+    def test_no_comments_for_article(self):
+        """Test no comments for a specific article"""
+        article = {
+            "title": "How to train your Dog",
+            "description": "Ever wonder how?",
+            "body": "It takes a Jacobian",
+            "image_url": "http://iviidev.info/downloads/image.jpg",
+            "tag_list": ["dragons", "fantacy"]
+        }
+        self.client.post(articles_url, article, format='json')
+        result = self.client.get(
+            '/api/articles/{}/comments'.format(
+                Article.objects.all().first().id),
+            format='json')
+        self.assertEqual(result.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn("Sorry there are no comments for this article",
+                      str(result.data))
