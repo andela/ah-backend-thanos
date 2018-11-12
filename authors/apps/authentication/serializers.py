@@ -4,8 +4,7 @@ from rest_framework import serializers
 
 from .models import User
 from authors.apps.profiles.models import Profile
-
-import re
+from authors.apps.core.custom_validators import ValidateUserData
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -21,29 +20,13 @@ class RegistrationSerializer(serializers.ModelSerializer):
     # request. Making `token` read-only handles that for us.
     token = serializers.CharField(max_length=255, read_only=True)
 
-    def reg_fields_validation(self, username, email, password):
-
-        if re.compile('[!@#$%^&*:;?><.0-9]').match(username):
-            raise serializers.ValidationError(
-                "Invalid Username , it contains invalid characters."
-            )
-
-        if (
-            re.compile(
-                r'^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,}$'
-            ).search(password)
-            is None
-        ):
-            raise serializers.ValidationError(
-                'Ensure your password is alphanumeric, with Minimum eight characters, at least one letter, one number and one special character'
-            )
-
     def validate(self, data):
         username = data.get('username', None)
         email = data.get('email', None)
         password = data.get("password", None)
 
-        self.reg_fields_validation(username, email, password)
+        validator = ValidateUserData()
+        validator.reg_fields_validation(username, email, password)
         return {'email': email, 'username': username, 'password': password}
 
     class Meta:

@@ -6,7 +6,7 @@ from rest_framework.exceptions import NotFound
 
 
 from authors.apps.authentication.models import User
-from .validators import Validator
+from authors.apps.core.custom_validators import ValidateUserData
 from django.db.models import Avg
 
 from ..core.utils.generate_author_details import to_represent_article
@@ -60,7 +60,7 @@ class ArticleSerializer(TaggitSerializer, serializers.ModelSerializer):
         raise NotFound(detail="User does not exist", code=404)
 
     def validate(self, data):
-        validator = Validator
+        validator = ValidateUserData()
         title = data.get("title", None)
         description = data.get("description", None)
         body = data.get("body", None)
@@ -92,7 +92,7 @@ class CommentSerializer(serializers.ModelSerializer):
         return to_represent_article(comment_details, user='comment_author')
 
     def validate(self, data):
-        validator = Validator
+        validator = ValidateUserData()
         comment_body = data.get("comment_body", None)
 
         validator.starts_with_letter("comment_body", comment_body)
@@ -134,7 +134,7 @@ class ThreadCreateSerializer(serializers.ModelSerializer):
         return thread
 
     def validate(self, data):
-        validator = Validator
+        validator = ValidateUserData()
         thread_body = data.get("thread_body", None)
         validator.starts_with_letter("thread_body", thread_body)
         return data
