@@ -264,9 +264,11 @@ class ArticleTests(BaseTest):
                       response.data['detail'])
 
     def test_score_out_of_range(self):
-        """Test setting a rating with a score not between 0 and 5"""
-        response = self.client.post("/api/articles/2/rating",
-                                    self.out_of_range, format='json')
+        query_data = self.client.get(articles_url, self.data, format='json')
+        article = query_data.json()['results'][0]
+        response = self.client.post("/api/articles/{}/rating".format(
+            article['id']),
+            self.out_of_range, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn(

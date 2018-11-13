@@ -398,6 +398,8 @@ class ArticleRating(generics.ListCreateAPIView):
 
     def create(self, request, *args, **kwargs):
         article_id = kwargs['pk']
+        if not Article.objects.filter(pk=article_id).exists():
+            raise NotFound(detail="Article Not found")
         rating = request.data.get('rating')
         message = "Score value must not go below `0` and not go beyond `5`"
         if rating > 5 or rating < 0:
