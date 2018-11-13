@@ -272,7 +272,7 @@ class ArticleTests(BaseTest):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn(
-            "Score value must not go below `0` and not go beyond `5`",
+            "Score value must be between `0` and `5`",
             response.data['detail'])
 
     def test_favorite_article(self):
