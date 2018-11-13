@@ -1,11 +1,12 @@
 from django.urls import path
 
 from .views import (
-    ArticlesListCreateAPIView, ArticleRetrieveUpdateDestroy,
-    ArticleRetrieveBySlugAPIView, CommentListCreateView,
-    ThreadListCreateView, CommentDeleteView, LikeAPIView,
-    ArticleRating, FavoriteStatusAPIView, BookmarkListCreateView,
-    BookmarkDestroyView, GetFavoriteArticles,)
+        ArticlesListCreateAPIView, ArticleRetrieveUpdateDestroy,
+        ArticleRetrieveBySlugAPIView, CommentListCreateView,
+        ThreadListCreateView, CommentDeleteView, LikeAPIView,
+        ArticleRating, FavoriteStatusAPIView, GetFavoriteArticles,
+        BookmarkListCreateView, BookmarkDestroyView, TagsListAPIView
+)
 
 
 urlpatterns = [
@@ -38,4 +39,5 @@ urlpatterns = [
     path('articles/favorites/',
          GetFavoriteArticles.as_view(),
          name='favorites'),
+    path('tags', TagsListAPIView.as_view()),
 ]

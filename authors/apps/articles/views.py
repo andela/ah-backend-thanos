@@ -21,7 +21,7 @@ from .serializers import (ArticleSerializer, ArticlesUpdateSerializer,
                           RatingSerializer, BookmarkSerializer,
                           FavoriteStatusSerializer,
                           FavoriteStatusUpdateSerializer,
-                          GetFavoriteArticleSerializer,)
+                          GetFavoriteArticleSerializer, TagSerializer)
 
 
 from authors.apps.core.utils.generate_slug import generate_slug
@@ -30,6 +30,8 @@ from authors.apps.core.utils.user_management import (
     validate_author
 )
 from authors.apps.core.utils.article_management import article_not_found
+
+from taggit.models import Tag
 
 
 class ArticlesListCreateAPIView(generics.ListCreateAPIView):
@@ -89,7 +91,6 @@ class ArticleRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         article_id = kwargs['pk']
         article_not_found(article_id)
         article = Article.objects.get(pk=kwargs['pk'])
-        print(article)
         title = request.data.get('title', article.title)
         slug = generate_slug(title)
         if Article.objects.filter(slug=slug).exists():
@@ -97,14 +98,16 @@ class ArticleRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
         author_id, author_username, = get_id_from_token(request)
         validate_author(author_id, article.author.id)
-
         fresh_article_data = {
             "slug": slug,
             "title": title,
             "description": request.data.get('description',
                                             article.description),
             "body": request.data.get('body', article.body),
-            "tag_list": request.data.get('tag_list', article.tag_list),
+            "tag_list": request.data.get(
+                'tag_list',
+                [str(tag) for tag in article.tag_list.all()]
+            ),
             "image_url": request.data.get('image_url', article.image_url),
             "audio_url": request.data.get('audio_url', article.audio_url)
         }
@@ -181,7 +184,6 @@ class FavoriteStatusAPIView(generics.GenericAPIView):
                                       .filter(article=article_id).exists():
             raise NotAcceptable(
                 detail="Your not supposed to be changing this",)
-        print(current_favorite_status.article.pk)
         new_favorite_status = {
             "favorite_status": favorite_status_update,
         }
@@ -421,7 +423,6 @@ class BookmarkListCreateView(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def create(self, request, *args, **kwargs):
-        print(request.data)
         article = get_object_or_404(Article, pk=kwargs['pk'])
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -453,3 +454,12 @@ class BookmarkDestroyView(generics.DestroyAPIView):
             return Response({"message": "This bookmark doesn\'t exist"}, 204)
         self.perform_destroy(bookmark)
         return Response({"message": "Bookmark succesfully deleted"}, 200)
+
+
+class TagsListAPIView(generics.ListAPIView):
+    """
+    get: List all Tags (categories).
+    """
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = (permissions.AllowAny,)

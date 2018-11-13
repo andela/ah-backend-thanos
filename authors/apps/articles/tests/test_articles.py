@@ -264,7 +264,7 @@ class ArticleTests(BaseTest):
                       response.data['detail'])
 
     def test_score_out_of_range(self):
-
+        """Test setting a rating with a score not between 0 and 5"""
         response = self.client.post("/api/articles/2/rating",
                                     self.out_of_range, format='json')
 
@@ -371,3 +371,10 @@ class ArticleTests(BaseTest):
                                    format='json')
         self.assertIn("Article Not found", str(response.data))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_get_all_tags(self):
+        """Test whether one can get a list of tags"""
+        self.test_create_article()
+        response = self.client.get("/api/tags", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("fantacy", str(response.data))
