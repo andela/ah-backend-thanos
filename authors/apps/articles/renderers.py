@@ -16,13 +16,13 @@ class ArticleRenderer(JSONRenderer):
         ke y = "articlesCount", value = number of articles
         '''
         if type(data) != ReturnList:
-            errors = data.get('errors', None)
+            errors = data.get('results', None)
             if errors is not None:
                 return super().render(data)
             else:
-                return json.dumps({
-                    'article': data
-                })
+                return json.dumps(
+                    data
+                )
         else:
             return json.dumps({
                 'articles': data,

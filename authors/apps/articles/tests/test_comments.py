@@ -46,7 +46,7 @@ class ArticleTests(BaseTest):
         response = self.client.get("/api/articles/110/comments",
                                    self.data,
                                    format='json')
-        self.assertIn("Article Not found",
+        self.assertIn("Sorry this article doesn\'t exist",
                       str(response.data))
         self.assertEqual(response.status_code,
                          status.HTTP_404_NOT_FOUND)

@@ -89,7 +89,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
         comment_details = super().to_representation(data)
 
-        return to_represent_article(comment_details)
+        return to_represent_article(comment_details, user='comment_author')
 
     def validate(self, data):
         validator = Validator
@@ -117,6 +117,12 @@ class CommentSerializer(serializers.ModelSerializer):
 
 class ThreadCreateSerializer(serializers.ModelSerializer):
 
+    def to_representation(self, data):
+
+        thread_details = super().to_representation(data)
+
+        return to_represent_article(thread_details, user='thread_author')
+
     def create(self, validated_data):
         author = self.context.get('thread_author', None)
         comment = self.context.get('comment', None)
@@ -126,6 +132,12 @@ class ThreadCreateSerializer(serializers.ModelSerializer):
             **validated_data
         )
         return thread
+
+    def validate(self, data):
+        validator = Validator
+        thread_body = data.get("thread_body", None)
+        validator.starts_with_letter("thread_body", thread_body)
+        return data
 
     class Meta:
         model = Thread
@@ -145,14 +157,9 @@ class LikeSerializer(serializers.ModelSerializer):
         '''
         Show author's actual details instead of author's id
         '''
-        like_status_details = super(
-            LikeSerializer, self).to_representation(data)
-        if User.objects.filter(pk=int(like_status_details["user"])).exists():
-            user_details = User.objects.get(
-                pk=int(like_status_details["user"]))
-            like_status_details["user"] = user_details.username
-            return like_status_details
-        raise NotFound(detail="User does not exist", code=404)
+        like_status_details = super().to_representation(data)
+
+        return to_represent_article(like_status_details, user='user')
 
 
 class FavoriteStatusSerializer(serializers.ModelSerializer):

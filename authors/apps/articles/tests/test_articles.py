@@ -229,7 +229,7 @@ class ArticleTests(BaseTest):
         self.client.post(articles_url, self.data, format='json')
 
         response = self.client.get(articles_url, self.data, format='json')
-        article = response.json()['article']['results'][0]
+        article = response.json()['results'][0]
 
         response = self.client.post("/api/articles/{}/rating".format(
             article['id']),
@@ -253,7 +253,7 @@ class ArticleTests(BaseTest):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + login_token)
 
         query_data = self.client.get(articles_url, self.data, format='json')
-        article = query_data.json()['article']['results'][0]
+        article = query_data.json()['results'][0]
         self.client.post("/api/articles/{}/rating".format(article['id']),
                          self.article_score, format='json')
         response = self.client.post("/api/articles/{}/rating".format(
