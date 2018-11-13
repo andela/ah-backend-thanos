@@ -5,8 +5,10 @@ from django.contrib.auth import get_user_model
 from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_encode
 from django.contrib.auth.tokens import default_token_generator
+from faker import Faker
 
 
+fake = Faker()
 User = get_user_model()
 
 articles_url = reverse("articles:list_create")
@@ -22,7 +24,7 @@ class BaseTest(APITestCase):
             "title": "How to train your Dragon",
             # "slug": "How to train your Dragon",
             "description": "Ever wonder how?",
-            "body": "It takes a Jacobian",
+            "body": fake.text() * 10,
             "image_url": "http://iviidev.info/downloads/image.jpg",
             "tag_list": ["dragons", "fantacy"]
         }
@@ -36,7 +38,8 @@ class BaseTest(APITestCase):
             "tag_list": ["dragons", "fantacy"]
         }
         self.article_with_missing_fields = {
-            "title": "Getting started with JS"
+            "title": "Getting started with JS",
+            "body": fake.text() * 10
         }
         self.article_with_bad_title = {
             "title": "1",
@@ -60,6 +63,7 @@ class BaseTest(APITestCase):
         }
         self.edit_data = {
             "title": "This title has been edited",
+            "body": fake.text()
         }
         self.like_status_data = {
             "like_status": "like"

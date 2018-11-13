@@ -18,6 +18,7 @@ class Article(models.Model):
     image_url = models.URLField(blank=False)
     audio_url = models.URLField(blank=True, null=True)
     views_count = models.IntegerField(default=0)
+    read_time = models.IntegerField(max_length=100, default=0)
 
     class Meta:
         ordering = ['-updated_at']

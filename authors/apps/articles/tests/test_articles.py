@@ -49,6 +49,7 @@ class ArticleTests(BaseTest):
                                    format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("How to train your Dragon", str(response.data))
+        self.assertEqual(response.data['read_time'], 2)
 
     def test_get_article_by_slug(self):
         self.test_create_article()
