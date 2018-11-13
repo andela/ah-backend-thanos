@@ -9,8 +9,7 @@ from .models import Profile, Follow
 from .serializers import (
     ProfileSerializer,
     FollowerFolloweePairSerializer,
-    FolloweesSerializer,
-    FollowersSerializer
+    FollowSerializer,
 )
 from .renderers import ProfileJSONRenderer
 from .exceptions import UserCannotEditProfile
@@ -113,12 +112,14 @@ class FollowingListAPIView(ListAPIView):
 
     def get(self, request, pk, *args, **kwargs):
         getUserFromDatabase(pk)  # validate user exists
-        if Follow.objects.filter(follower=pk).exists():
-            serializer = FolloweesSerializer(
-                Follow.objects.filter(follower=pk), many=True
-            )
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        raise NotFound(detail="This user is not following anyone")
+        follow = Follow.objects.filter(follower=pk)
+        if follow.count() == 0:
+            raise NotFound(detail="This user is not following anyone")
+        serializer = FollowSerializer(
+            follow, many=True,
+            context={'user_type': 'followee'}
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class FollowersListAPIView(ListAPIView):
@@ -128,9 +129,8 @@ class FollowersListAPIView(ListAPIView):
 
     def get(self, request, pk, *args, **kwargs):
         getUserFromDatabase(pk)  # validate user exists
-        if Follow.objects.filter(followee=pk).exists():
-            serializer = FollowersSerializer(
-                Follow.objects.filter(followee=pk), many=True
-            )
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        raise NotFound(detail="This user is not being followed by anyone")
+        follow = Follow.objects.filter(followee=pk)
+        if follow.count() == 0:
+            raise NotFound(detail="This user is not being followed by anyone")
+        serializer = FollowSerializer(follow, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

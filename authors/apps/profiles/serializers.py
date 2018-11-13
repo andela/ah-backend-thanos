@@ -53,45 +53,19 @@ class FollowerFolloweePairSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class FolloweesSerializer(serializers.ModelSerializer):
-    """Used to display users bing followed by a specific user"""
-
+class FollowSerializer(serializers.ModelSerializer):
+    """Used to display followers and followees of a specific user"""
     def to_representation(self, data):
-        follow_details = super(FolloweesSerializer,
+        follow_details = super(FollowSerializer,
                                self).to_representation(data)
-        profile = getProfileFromDatabase(user_id=follow_details['followee'])
-        user = getUserFromDatabase(pk=profile.id)
-        follow_details['followee'] = {
-            "id": profile.id,
-            "username": user.username,
-            "first_name": profile.first_name,
-            "last_name": profile.last_name,
-            "bio": profile.bio
-        }
-        return (follow_details)
+        if self.context.get("user_type") == 'followee':
+            profile = getProfileFromDatabase(
+                user_id=follow_details['followee'])
+        else:
+            profile = getProfileFromDatabase(
+                user_id=follow_details['follower'])
+        return (ProfileSerializer(profile).data)
 
     class Meta:
         model = Follow
-        fields = ['followee']
-
-
-class FollowersSerializer(serializers.ModelSerializer):
-    """Used to display users a specific user follows"""
-
-    def to_representation(self, data):
-        follow_details = super(FollowersSerializer,
-                               self).to_representation(data)
-        profile = getProfileFromDatabase(user_id=follow_details['follower'])
-        user = getUserFromDatabase(pk=profile.id)
-        follow_details['follower'] = {
-            "id": profile.id,
-            "username": user.username,
-            "first_name": profile.first_name,
-            "last_name": profile.last_name,
-            "bio": profile.bio
-        }
-        return (follow_details)
-
-    class Meta:
-        model = Follow
-        fields = ['follower']
+        fields = '__all__'
