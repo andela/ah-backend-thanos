@@ -128,7 +128,7 @@ class ArticleTests(BaseTest):
 
     def test_invalid_page_number(self):
         self.test_create_article()
-        articles_url = '/api/articles?page=3'
+        articles_url = '/api/articles?page=999'
         response = self.client.get(articles_url, format='json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -252,7 +252,7 @@ class ArticleTests(BaseTest):
         login_token = login_response.data['token']
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + login_token)
 
-        query_data = self.client.get(articles_url, self.data, format='json')
+        query_data = self.client.get(articles_url, format='json')
         article = query_data.json()['results'][0]
         self.client.post("/api/articles/{}/rating".format(article['id']),
                          self.article_score, format='json')
@@ -378,3 +378,17 @@ class ArticleTests(BaseTest):
         response = self.client.get("/api/tags", format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("fantacy", str(response.data))
+
+    def search_articles_by_title(self):
+        self.test_create_article()
+        response = self.client.get("/api/articles?title=dragon", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("How to train your Dragon", str(response.data))
+
+    def search_articles_by_author(self):
+        self.test_create_article
+        response = self.client.get(
+            "/api/articles?author={}".format(User.objects.all().first()),
+            format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("How to train your Dragon", str(response.data))

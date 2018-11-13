@@ -26,7 +26,7 @@ class ArticleRenderer(JSONRenderer):
         else:
             return json.dumps({
                 'articles': data,
-                'articlesCount': len(Article.objects.all())
+                'articlesCount': len(data)
             })
 
 
