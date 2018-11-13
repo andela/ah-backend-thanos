@@ -110,11 +110,10 @@ class ArticleTests(BaseTest):
         self.assertIn("Article deleted sucessfully", str(response.data))
 
     def test_delete_article_not_found(self):
-        self.test_create_article()
         response = self.client.delete("/api/articles/{}".format(100),
                                       format='json')
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn("Article Not found", str(response.data))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_get_article_title(self):
         """ Test model method to get article title """
@@ -131,7 +130,6 @@ class ArticleTests(BaseTest):
         self.test_create_article()
         articles_url = '/api/articles?page=3'
         response = self.client.get(articles_url, format='json')
-
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_valid_page_number(self):
@@ -202,7 +200,7 @@ class ArticleTests(BaseTest):
         self.test_create_article()
         article = Article.objects.all().first()
         like_status_url = "/api/articles/{}/like_status".format(article.pk)
-        like_status_update_url = "/api/articles/{}/like_status_update".format(
+        like_status_update_url = "/api/articles/{}/like_status".format(
             article.pk)
         self.client.post(like_status_url,
                          self.like_status_data,
@@ -274,3 +272,102 @@ class ArticleTests(BaseTest):
         self.assertIn(
             "Score value must not go below `0` and not go beyond `5`",
             response.data['detail'])
+
+    def test_favorite_article(self):
+        self.test_create_article()
+        article = Article.objects.all().first()
+        favorite_status_url = "/api/articles/{}/favorite_status"\
+                              .format(article.pk)
+        response = self.client.post(favorite_status_url,
+                                    self.favorite_status_data,
+                                    format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_get_favorite_articles(self):
+        self.test_create_article()
+        article = Article.objects.all().first()
+        favorite_status_url = "/api/articles/{}/favorite_status"\
+                              .format(article.pk)
+        response = self.client.post(favorite_status_url,
+                                    self.favorite_status_data,
+                                    format='json')
+        favorite_status_url = "/api/articles/favorites/"
+        response = self.client.get(favorite_status_url,
+                                   format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_favorite_status_article_doesent_exist(self):
+        favorite_status_url = "/api/articles/{}/favorite_status".format(100)
+        response = self.client.post(favorite_status_url,
+                                    self.favorite_status_data,
+                                    format='json')
+        self.assertIn("Article Not found",
+                      str(response.data))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_already_favorited_article(self):
+        self.test_create_article()
+        article = Article.objects.all().first()
+        favorite_status_url = "/api/articles/{}/favorite_status"\
+                              .format(article.pk)
+        self.client.post(favorite_status_url,
+                         self.favorite_status_data,
+                         format='json')
+        response = self.client.post(favorite_status_url,
+                                    self.favorite_status_data,
+                                    format='json')
+        self.assertEqual(response.status_code, status.HTTP_406_NOT_ACCEPTABLE)
+
+    def test_get_favorite_status(self):
+        self.test_create_article()
+        article = Article.objects.all().first()
+        favorite_status_url = "/api/articles/{}/favorite_status"\
+                              .format(article.pk)
+        self.client.post(favorite_status_url,
+                         self.favorite_status_data,
+                         format='json')
+        response = self.client.get(favorite_status_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_favorite_status_article_doesnt_exist(self):
+        favorite_status_url = "/api/articles/{}/favorite_status".format(100)
+        self.client.post(favorite_status_url,
+                         self.favorite_status_data,
+                         format='json')
+        response = self.client.get(favorite_status_url, format='json')
+        self.assertIn("Article Not found", str(response.data))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_get_favorite_status_article_not_liked_yet(self):
+        self.test_create_article()
+        article = Article.objects.all().first()
+        favorite_status_url = "/api/articles/{}/favorite_status".format(
+            article.pk)
+        response = self.client.get(favorite_status_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("This article has not been favorited yet",
+                      str(response.data))
+
+    def test_update_favorite_status(self):
+        self.test_create_article()
+        article = Article.objects.all().first()
+        favorite_status_url = "/api/articles/{}/favorite_status"\
+                              .format(article.pk)
+        favorite_status_update_url = "/api/articles/{}/favorite_status"\
+                                     .format(article.pk)
+        self.client.post(favorite_status_url,
+                         self.favorite_status_data,
+                         format='json')
+        response = self.client.put(favorite_status_update_url,
+                                   self.favorite_status_update_data,
+                                   format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_put_favorite_status_article_doesnt_exist(self):
+        favorite_status_update_url = "/api/articles/{}/favorite_status"\
+                                     .format(100)
+        response = self.client.put(favorite_status_update_url,
+                                   self.favorite_status_update_data,
+                                   format='json')
+        self.assertIn("Article Not found", str(response.data))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

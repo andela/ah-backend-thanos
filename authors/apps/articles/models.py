@@ -4,8 +4,6 @@ from django.utils import timezone
 from authors.apps.authentication.models import User
 from authors.apps.profiles.models import Profile
 from django.contrib.postgres.fields import ArrayField
-
-
 from ..core.models import TimeStampedModel
 
 
@@ -18,8 +16,6 @@ class Article(models.Model):
     tag_list = ArrayField(models.CharField(max_length=200), blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    favorited = models.BooleanField(default=False)
-    favorites_count = models.IntegerField(default=0)
     image_url = models.URLField(blank=False)
     audio_url = models.URLField(blank=True, null=True)
 
@@ -73,3 +69,12 @@ class Bookmark(models.Model):
     article = models.ForeignKey(Article, blank=False, on_delete=models.CASCADE)
     bookmarked_at = models.DateTimeField(auto_created=True,
                                          auto_now=False, default=timezone.now)
+
+
+class FavoriteArticle(models.Model):
+    article = models.ForeignKey(Article, on_delete=models.CASCADE)
+    favorite_status = models.BooleanField(default=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.favorite_status
