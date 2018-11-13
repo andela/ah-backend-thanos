@@ -16,6 +16,17 @@ def get_id_from_token(request):
     return payload['id'], payload['username']
 
 
+def get_id_from_token_for_viewcount(request):
+    auth = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')
+    # payload = jwt.decode(auth, settings.SECRET_KEY, 'utf-8')
+    # return payload['id'], payload['username']
+    if len(auth) > 1:
+        token = auth[1]
+        payload = jwt.decode(token, settings.SECRET_KEY, 'utf-8')
+        return payload['id']
+    return 0
+
+
 def validate_author(current_user_id, author_id):
     """Retrict user from editing or deleting if not authorized"""
     if current_user_id != author_id:

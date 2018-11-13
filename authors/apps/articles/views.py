@@ -1,14 +1,12 @@
 import time
-from rest_framework.exceptions import (NotAcceptable,
-                                       NotFound,
-                                       ParseError,)
-
 from django.shortcuts import get_object_or_404
 
 from rest_framework import status
 from rest_framework import generics
 from rest_framework import permissions
 from rest_framework.response import Response
+from rest_framework.exceptions import (NotAcceptable, NotFound,
+                                       ParseError,)
 
 from .models import (Article, Comment, Thread, LikeArticle, Rating, Bookmark,
                      FavoriteArticle,)
@@ -21,16 +19,15 @@ from .serializers import (ArticleSerializer, ArticlesUpdateSerializer,
                           RatingSerializer, BookmarkSerializer,
                           FavoriteStatusSerializer,
                           FavoriteStatusUpdateSerializer,
-                          GetFavoriteArticleSerializer, TagSerializer)
-
-
+                          GetFavoriteArticleSerializer, TagSerializer,
+                          ArticlesUpdatesSerializer)
 from authors.apps.core.utils.generate_slug import generate_slug
 from authors.apps.core.utils.user_management import (
     get_id_from_token,
-    validate_author
+    validate_author,
+    get_id_from_token_for_viewcount
 )
 from authors.apps.core.utils.article_management import article_not_found
-
 from taggit.models import Tag
 
 
@@ -99,6 +96,27 @@ class ArticleRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     renderer_classes = (ArticleRenderer,)
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     lookup_field = 'pk'
+
+    def get(self, request, *args, **kwargs):
+        article = Article.objects.get(pk=kwargs['pk'])
+        if article is None:
+            raise NotFound(detail="Article Not found")
+
+        user_id = get_id_from_token_for_viewcount(request)
+        if user_id != article.author.id:
+            views_count = article.views_count
+            views_count += 1
+            fresh_article = {
+                'views_count': views_count
+            }
+            serializer = ArticlesUpdatesSerializer(
+                data=fresh_article)
+            serializer.is_valid(raise_exception=True)
+            serializer.update(article, fresh_article)
+        return Response(
+            self.serializer_class(article,
+                                  context={'user_id': user_id}).data,
+            status=status.HTTP_200_OK)
 
     def update(self, request, *args, **kwargs):
         article_id = kwargs['pk']
@@ -254,17 +272,16 @@ class CommentListCreateView(generics.ListCreateAPIView):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def get(self, request, *args, **kwargs):
-        if not Article.objects.filter(pk=kwargs['article_id']).exists():
+    def get_queryset(self):
+        if not Article.objects.filter(pk=self.kwargs['article_id']).exists():
             raise NotFound(detail="Sorry this article doesn't exist", code=404)
 
-        comment = Comment.objects.filter(article=kwargs['article_id'])
+        comment = Comment.objects.filter(article=self.kwargs['article_id'])
         if not comment:
             raise NotFound(
                 detail="Sorry there are no comments for this article",
                 code=404)
-        serializer = self.serializer_class(comment, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return comment
 
 
 class LikeAPIView(generics.GenericAPIView):
@@ -354,17 +371,16 @@ class ThreadListCreateView(generics.ListCreateAPIView):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def get(self, request, *args, **kwargs):
-        if not Comment.objects.filter(pk=kwargs['comment_id']).exists():
+    def get_queryset(self):
+        if not Comment.objects.filter(pk=self.kwargs['comment_id']).exists():
             raise NotFound(
                 detail="Sorry this comment doesn't exist", code=404)
 
-        threads = Thread.objects.filter(comment=kwargs['comment_id'])
+        threads = Thread.objects.filter(comment=self.kwargs['comment_id'])
         if not threads:
             raise NotFound(
                 detail="Sorry there are no thread comments for this article")
-        serializer = self.serializer_class(threads, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return threads
 
 
 class CommentDeleteView(generics.DestroyAPIView):
@@ -401,7 +417,7 @@ class ArticleRating(generics.ListCreateAPIView):
         if not Article.objects.filter(pk=article_id).exists():
             raise NotFound(detail="Article Not found")
         rating = request.data.get('rating')
-        message = "Score value must not go below `0` and not go beyond `5`"
+        message = "Score value must be between `0` and `5`"
         if rating > 5 or rating < 0:
             raise ParseError(detail=message)
         reader, author_username, = get_id_from_token(request)

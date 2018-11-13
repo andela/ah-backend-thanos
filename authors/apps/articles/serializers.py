@@ -50,6 +50,8 @@ class ArticleSerializer(TaggitSerializer, serializers.ModelSerializer):
             article_details["dislikes"] = dislikes
             article_details["Favorites_count"] = favorites
             article_details["rating"] = rating['rating__avg']
+            if self.context.get('user_id') != user_details.id:
+                del article_details["views_count"]
             if article_details["rating"] is not None:
                 article_details["rating"] = round(rating['rating__avg'], 1)
             else:
@@ -81,6 +83,13 @@ class ArticlesUpdateSerializer(TaggitSerializer, serializers.ModelSerializer):
         model = Article
         fields = ['slug', 'title', 'description', 'body',
                   'tag_list', 'image_url', 'audio_url']
+
+
+class ArticlesUpdatesSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Article
+        fields = ['views_count']
 
 
 class CommentSerializer(serializers.ModelSerializer):
