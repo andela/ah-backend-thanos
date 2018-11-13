@@ -44,6 +44,19 @@ class ArticlesListCreateAPIView(generics.ListCreateAPIView):
     renderer_classes = (ArticleRenderer,)
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
+    def get_queryset(self):
+        articles = Article.objects.all()
+        if 'author' in self.request.GET:  # by author
+            articles = articles.filter(
+                author__username=self.request.GET['author'])
+        if 'title' in self.request.GET:  # by title
+            articles = articles.filter(
+                title__icontains=self.request.GET['title'])
+        if 'tag' in self.request.GET:  # by tag
+            articles = articles.filter(
+                tag_list__name__icontains=self.request.GET['tag'])
+        return articles
+
     def create(self, request, *args, **kwargs):
         title = request.data.get('title')
         description = request.data.get('description')
