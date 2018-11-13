@@ -54,6 +54,22 @@ class LikeArticle(models.Model):
         return self.like_status
 
 
+class LikeComment(models.Model):
+    LIKE = 'like'
+    DISLIKE = 'dislike'
+    LIKE_CHOICES = (
+        (LIKE, 'like'),
+        (DISLIKE, 'dislike'),)
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE)
+    comment_body = models.CharField(max_length=255)
+    like_status = models.CharField(max_length=10,
+                                   choices=LIKE_CHOICES)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.like_status
+
+
 class Rating(models.Model):
 
     reader = models.ForeignKey(User, on_delete=models.CASCADE)

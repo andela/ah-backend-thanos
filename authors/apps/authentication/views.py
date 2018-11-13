@@ -284,7 +284,7 @@ class OauthlLoginAPIView(APIView):  # pragma: no cover
             }
             return Response(response, status.HTTP_200_OK)  # pragma: no cover
 
-        except(TypeError, ValueError, OverflowError):  # pragma: no cover
+        except(NameError):  # pragma: no cover
 
             return Response({"error": "Unable to login"},
                             status.HTTP_400_BAD_REQUEST)

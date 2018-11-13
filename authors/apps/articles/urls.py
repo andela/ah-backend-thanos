@@ -5,7 +5,8 @@ from .views import (
         ArticleRetrieveBySlugAPIView, CommentListCreateView,
         ThreadListCreateView, CommentDeleteView, LikeAPIView,
         ArticleRating, FavoriteStatusAPIView, GetFavoriteArticles,
-        BookmarkListCreateView, BookmarkDestroyView, TagsListAPIView
+        BookmarkListCreateView, BookmarkDestroyView, TagsListAPIView,
+        LikeCommentAPIView,
 )
 
 
@@ -40,4 +41,8 @@ urlpatterns = [
          GetFavoriteArticles.as_view(),
          name='favorites'),
     path('tags', TagsListAPIView.as_view()),
+    path('articles/<int:article_id>/comments/<int:comment_id>/like_status',
+         LikeCommentAPIView.as_view(), name='like_comment'),
+
+
 ]
