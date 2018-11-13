@@ -78,7 +78,7 @@ class ArticleTests(BaseTest):
 
     def test_comment_not_found(self):
         """Test whether a comment is not found"""
-        response = self.client.post("/api/articles/11/comments/40/threads",
+        response = self.client.post("/api/articles/11/comments/999/threads",
                                     self.thread_data,
                                     format='json')
         self.assertEqual(response.status_code,

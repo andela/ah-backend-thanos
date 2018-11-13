@@ -11,8 +11,13 @@ from django.db.models import Avg
 
 from ..core.utils.generate_author_details import to_represent_article
 
+from taggit_serializer.serializers import (TagListSerializerField,
+                                           TaggitSerializer)
+from taggit.models import Tag
 
-class ArticleSerializer(serializers.ModelSerializer):
+
+class ArticleSerializer(TaggitSerializer, serializers.ModelSerializer):
+    tag_list = TagListSerializerField()
 
     class Meta:
         model = Article
@@ -69,7 +74,8 @@ class ArticleSerializer(serializers.ModelSerializer):
         return data
 
 
-class ArticlesUpdateSerializer(serializers.ModelSerializer):
+class ArticlesUpdateSerializer(TaggitSerializer, serializers.ModelSerializer):
+    tag_list = TagListSerializerField()
 
     class Meta:
         model = Article
@@ -234,3 +240,9 @@ class FavoriteStatusUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = FavoriteArticle
         fields = ['favorite_status']
+
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ['id', 'name']

@@ -57,6 +57,8 @@ INSTALLED_APPS = [
     'authors.apps.profiles',
     'drf_yasg',
     'authors.apps.articles',
+    'taggit',
+    'taggit_serializer',
 ]
 
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
