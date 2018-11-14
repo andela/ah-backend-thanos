@@ -24,8 +24,8 @@ from authors.apps.core.utils.user_management import (
 
 class ProfileRetrieveUpdateAPIView(GenericAPIView):
     """
-    Allow users  to retrieve and edit their profiles Params: username:
-    A username is needed in order to get a specific profile.
+    get: Allow users  to retrieve their profiles
+    put: Allow users  to edit their profiles
     """
     permission_classes = (IsAuthenticated,)
     renderer_classes = (ProfileJSONRenderer,)
@@ -68,7 +68,9 @@ class ProfileRetrieveUpdateAPIView(GenericAPIView):
 
 
 class ProfileListAPIView(ListAPIView):
-    """Allow user to view other user profiles"""
+    """
+    get: Allow user to view other user profiles
+    """
     permission_classes = (IsAuthenticated, )
     serializer_class = ProfileSerializer
     queryset = Profile.objects.all()
@@ -76,8 +78,8 @@ class ProfileListAPIView(ListAPIView):
 
 class FollowGenericAPIView(GenericAPIView):
     """
-    POST follow
-    DELETE unfollow
+    post: Follow another user
+    delete: Unfollow a user
     """
     permission_classes = (IsAuthenticated,)
     renderer_classes = (ProfileJSONRenderer,)
@@ -106,7 +108,9 @@ class FollowGenericAPIView(GenericAPIView):
 
 
 class FollowingListAPIView(ListAPIView):
-    """GET all user's one is following"""
+    """
+    get: Get all the user's one is following
+    """
     permission_classes = (IsAuthenticated,)
     renderer_classes = (ProfileJSONRenderer,)
 
@@ -123,7 +127,9 @@ class FollowingListAPIView(ListAPIView):
 
 
 class FollowersListAPIView(ListAPIView):
-    """GET all followers of a user"""
+    """
+    get: Get all followers of a user
+    """
     permission_classes = (IsAuthenticated,)
     renderer_classes = (ProfileJSONRenderer,)
 

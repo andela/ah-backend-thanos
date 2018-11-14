@@ -62,8 +62,7 @@ def get_data_pipeline(backend, response, *args, **kwargs):  # pragma: no cover
 
 class RegistrationAPIView(generics.CreateAPIView):
     """
-    post:
-    Register a user.
+    post: Register a user.
     """
     permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
@@ -88,18 +87,17 @@ class RegistrationAPIView(generics.CreateAPIView):
             Hi {},
             Please click on the link to confirm your registration,
             {}://{}/api/users/activate/{}/{}""".format(user.username,
-                                                      request.scheme,
-                                                      request.get_host(),
-                                                      uid,
-                                                      activation_token)
+                                                       request.scheme,
+                                                       request.get_host(),
+                                                       uid,
+                                                       activation_token)
         SendEmail.send_email(self, self.mail_subject, self.message, self.email)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class LoginAPIView(generics.CreateAPIView):
     """
-        post:
-        Login a user.
+    post: Login a user.
     """
     permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
@@ -145,6 +143,9 @@ class LoginAPIView(generics.CreateAPIView):
 
 
 class AccountVerificationAPIView(APIView):
+    """
+    get: User account verifications.
+    """
     permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
 
@@ -183,6 +184,9 @@ class AccountVerificationAPIView(APIView):
 
 
 class SendEmailPasswordReset(generics.CreateAPIView):
+    """
+    post: User send email for password reset.
+    """
 
     permission_classes = (AllowAny,)
     serializer_class = SendPasswordResetEmailSerializer
@@ -201,8 +205,8 @@ class SendEmailPasswordReset(generics.CreateAPIView):
             Hi,
             Please click on the link to reset your password,
             {}://{}/api/users/reset_password/{}""".format(request.scheme,
-                                                         request.get_host(),
-                                                         reset_password_token)
+                                                          request.get_host(),
+                                                          reset_password_token)
         SendEmail.send_email(self, self.mail_subject, self.message, email)
         return Response({"message":
                          "We have sent you an email to reset your password",
@@ -211,6 +215,9 @@ class SendEmailPasswordReset(generics.CreateAPIView):
 
 
 class ResetPassword(generics.GenericAPIView):
+    """
+    put: Email password reset.
+    """
     permission_classes = (AllowAny,)
     look_url_kwarg = 'reset_password_token'
     serializer_class = UpdatePasswordSerializer
@@ -246,8 +253,10 @@ class ResetPassword(generics.GenericAPIView):
 
 
 class OauthAPIView(generics.GenericAPIView):
+    """
+    get: User signup using social authentication.
+    """
     permission_classes = (AllowAny,)
-    # renderer_classes = (UserJSONRenderer,)
 
     def get(self, request, social_auth_Provider, auth_provider_url=None):
         social_auth_Provider = social_auth_Provider.lower()
@@ -271,6 +280,9 @@ class OauthAPIView(generics.GenericAPIView):
 
 
 class OauthlLoginAPIView(APIView):  # pragma: no cover
+    """
+    get: User login using social authentication.
+    """
     permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
 
