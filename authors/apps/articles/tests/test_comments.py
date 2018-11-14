@@ -6,6 +6,8 @@ from .Basetest import BaseTest
 
 
 articles_url = reverse("articles:list_create")
+a_id = 100
+bkmk_url = reverse("articles:create_bookmark", args=(a_id,))
 
 
 class ArticleTests(BaseTest):
@@ -83,6 +85,15 @@ class ArticleTests(BaseTest):
                                     format='json')
         self.assertEqual(response.status_code,
                          status.HTTP_404_NOT_FOUND)
+        self.assertIn('Not found', str(response.data))
+
+    def test_bookmark_not_found(self):
+        """Test whether a article is not found for a bookmark"""
+        response = self.client.post(bkmk_url,
+                                    format='json')
+        self.assertEqual(response.status_code,
+                         status.HTTP_404_NOT_FOUND)
+        print(response.data)
         self.assertIn('Not found', str(response.data))
 
     def test_delete_comment(self):

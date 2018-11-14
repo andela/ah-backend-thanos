@@ -10,10 +10,10 @@ class GeneralRenderer(JSONRenderer):
             if errors is not None:
                 return super().render(data)
             else:
-                return json.dumps({
-                    self.object_name: data
-                })
+                return json.dumps(
+                   data
+                )
         else:
-            return json.dumps({
-                self.object_name: data,
-            })
+            return json.dumps(
+                 data
+            )

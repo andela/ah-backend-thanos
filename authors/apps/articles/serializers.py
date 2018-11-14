@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from .models import (Article, Comment, Thread, LikeArticle, Rating,
-                     FavoriteArticle, Bookmark, LikeComment,)
+from .models import (Article, Comment, Thread, LikeArticle, LikeComment,
+                     Rating,
+                     FavoriteArticle, Bookmark, ReportArticle,)
 
 from rest_framework.exceptions import NotFound
 
@@ -289,3 +290,13 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ['id', 'name']
+
+
+class ReportArticleSerializer(serializers.ModelSerializer):
+    reported_by = serializers.ReadOnlyField(source='user.email')
+    article_author = serializers.ReadOnlyField(source='article.author.email')
+
+    class Meta:
+        model = ReportArticle
+        fields = ['reason', 'article', 'user', 'reported_by',
+                  'article_author', 'reported_at']

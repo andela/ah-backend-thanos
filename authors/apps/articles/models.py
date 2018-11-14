@@ -7,7 +7,7 @@ from taggit.managers import TaggableManager
 
 
 class Article(models.Model):
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    author = models.ForeignKey(User, blank=False, on_delete=models.CASCADE)
     slug = models.CharField(max_length=100, blank=False, unique=True)
     title = models.CharField(max_length=300, blank=False)
     description = models.TextField(blank=False)
@@ -18,7 +18,7 @@ class Article(models.Model):
     image_url = models.URLField(blank=False)
     audio_url = models.URLField(blank=True, null=True)
     views_count = models.IntegerField(default=0)
-    read_time = models.IntegerField(max_length=100, default=0)
+    read_time = models.IntegerField(default=0)
 
     class Meta:
         ordering = ['-updated_at']
@@ -95,3 +95,13 @@ class FavoriteArticle(models.Model):
 
     def __str__(self):
         return self.favorite_status
+
+
+class ReportArticle(models.Model):
+    reason = models.CharField(max_length=300, blank=False)
+    article = models.ForeignKey(Article,
+                                on_delete=models.CASCADE)
+    user = models.ForeignKey(User,
+                             on_delete=models.CASCADE)
+    reported_at = models.DateTimeField(auto_created=True,
+                                       auto_now=False, default=timezone.now)
