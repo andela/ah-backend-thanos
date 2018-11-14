@@ -1,4 +1,6 @@
 import re
+import time
+from authors.apps.articles.models import Article
 
 
 def generate_slug(title):
@@ -9,4 +11,6 @@ def generate_slug(title):
             slug += i
         elif i == ' ':
             slug += '-'
+    if Article.objects.filter(slug=slug).exists():
+        slug += str(time.time()).replace('.', '')
     return slug

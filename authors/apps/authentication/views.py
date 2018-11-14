@@ -2,8 +2,7 @@ from authors.apps.profiles.models import Profile
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework import serializers
-from rest_framework import generics
+from rest_framework import serializers, generics
 from rest_framework.reverse import reverse
 from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -14,7 +13,6 @@ from rest_framework.views import APIView
 from datetime import datetime, timedelta
 import jwt
 import re
-
 
 from .renderers import UserJSONRenderer
 from .serializers import (
@@ -28,25 +26,20 @@ User = get_user_model()
 
 
 def get_data_pipeline(backend, response, *args, **kwargs):  # pragma: no cover
-
     if backend.name == 'google-oauth2':  # pragma: no cover
         email = kwargs['details']['email']
         username = response['displayName']
-
     if backend.name == 'facebook':  # pragma: no cover
         email = kwargs['details']['email']
         username = response.get('name')
-
     if backend.name == 'twitter':  # pragma: no cover
         email = kwargs['details']['email']
         username = response['screen_name']
-
     try:  # pragma: no cover
         global auth_user
         auth_user = User.objects.get(email=email)
     except(TypeError, ValueError, OverflowError, User.DoesNotExist):
         auth_user = None
-
     if auth_user:  # pragma: no cover
         auth_user.token
     else:  # pragma: no cover
@@ -61,16 +54,13 @@ def get_data_pipeline(backend, response, *args, **kwargs):  # pragma: no cover
 
 
 class RegistrationAPIView(generics.CreateAPIView):
-    """
-    post: Register a user.
-    """
+    """post: Register a user."""
     permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
     serializer_class = RegistrationSerializer
 
     def post(self, request):
         user = request.data.get('user', {})
-
         # The create serializer, validate serializer, save serializer pattern
         # below is common and you will see it a lot throughout this course and
         # your own work later on. Get familiar with it.
@@ -96,16 +86,13 @@ class RegistrationAPIView(generics.CreateAPIView):
 
 
 class LoginAPIView(generics.CreateAPIView):
-    """
-    post: Login a user.
-    """
+    """post: Login a user."""
     permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
     serializer_class = LoginSerializer
 
     def post(self, request):
         user = request.data.get('user', {})
-
         # Notice here that we do not call `serializer.save()` like we did for
         # the registration endpoint. This is because we don't actually have
         # anything to save. Instead, the `validate` method on our serializer
@@ -115,37 +102,8 @@ class LoginAPIView(generics.CreateAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# class UserRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
-#     permission_classes = (IsAuthenticated,)
-#     renderer_classes = (UserJSONRenderer,)
-#     serializer_class = UserSerializer
-
-#     def retrieve(self, request, *args, **kwargs):
-#         # There is nothing to validate or save here.Instead, we just want the
-#         # serializer to handle turning our `User` object into something that
-#         # can be JSONified and sent to the client.
-#         serializer = self.serializer_class(request.user)
-
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-
-#     def update(self, request, *args, **kwargs):
-#         serializer_data = request.data.get('user', {})
-
-#         # Here is that serialize, validate, save pattern we talked about
-#         # before.
-#         serializer = self.serializer_class(
-#             request.user, data=serializer_data, partial=True
-#         )
-#         serializer.is_valid(raise_exception=True)
-#         serializer.save()
-
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-
-
 class AccountVerificationAPIView(APIView):
-    """
-    get: User account verifications.
-    """
+    """get: User account verifications."""
     permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
 
@@ -178,16 +136,12 @@ class AccountVerificationAPIView(APIView):
                 "message":
                 'Email confirmed. Now you can login your account.'}
             return Response(message, status=status.HTTP_200_OK)
-
         return Response({"error": 'Activation link is invalid or expired !!'},
                         status=status.HTTP_400_BAD_REQUEST)
 
 
 class SendEmailPasswordReset(generics.CreateAPIView):
-    """
-    post: User send email for password reset.
-    """
-
+    """post: User send email for password reset."""
     permission_classes = (AllowAny,)
     serializer_class = SendPasswordResetEmailSerializer
 
@@ -215,9 +169,7 @@ class SendEmailPasswordReset(generics.CreateAPIView):
 
 
 class ResetPassword(generics.GenericAPIView):
-    """
-    put: Email password reset.
-    """
+    """put: Email password reset."""
     permission_classes = (AllowAny,)
     look_url_kwarg = 'reset_password_token'
     serializer_class = UpdatePasswordSerializer
@@ -253,24 +205,18 @@ class ResetPassword(generics.GenericAPIView):
 
 
 class OauthAPIView(generics.GenericAPIView):
-    """
-    get: User signup using social authentication.
-    """
+    """get: User signup using social authentication."""
     permission_classes = (AllowAny,)
 
     def get(self, request, social_auth_Provider, auth_provider_url=None):
         social_auth_Provider = social_auth_Provider.lower()
-
         if social_auth_Provider == 'google':
             auth_provider_url = reverse(
                 'social:begin', args=('google-oauth2',))
-
         if social_auth_Provider == 'facebook':
             auth_provider_url = reverse('social:begin', args=('facebook',))
-
         if social_auth_Provider == 'twitter':
             auth_provider_url = reverse('social:begin', args=('twitter',))
-
         if auth_provider_url is not None:
             redirect_to_login_url = """{}://{}{}""".format(
                 request.scheme, request.get_host(), auth_provider_url)
@@ -280,23 +226,18 @@ class OauthAPIView(generics.GenericAPIView):
 
 
 class OauthlLoginAPIView(APIView):  # pragma: no cover
-    """
-    get: User login using social authentication.
-    """
+    """get: User login using social authentication."""
     permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
 
     def get(self, request):  # pragma: no cover
         try:
-
             response = {
                 "username": auth_user.username,
                 "email": auth_user.email,
                 "token": auth_user.token
             }
             return Response(response, status.HTTP_200_OK)  # pragma: no cover
-
         except(NameError):  # pragma: no cover
-
             return Response({"error": "Unable to login"},
                             status.HTTP_400_BAD_REQUEST)

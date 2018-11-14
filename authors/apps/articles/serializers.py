@@ -47,7 +47,6 @@ class ArticleSerializer(TaggitSerializer, serializers.ModelSerializer):
                                        .filter(article=article_details["id"])\
                                        .filter(favorite_status='True').count()
             article_details["likes"] = likes
-            article_details["likes"] = likes
             article_details["dislikes"] = dislikes
             article_details["Favorites_count"] = favorites
             article_details["rating"] = rating['rating__avg']
@@ -59,7 +58,6 @@ class ArticleSerializer(TaggitSerializer, serializers.ModelSerializer):
                 article_details["rating"] = 0
 
             return article_details
-
         raise NotFound(detail="User does not exist", code=404)
 
     def validate(self, data):
