@@ -19,3 +19,4 @@ omit =
     */tests/*
     */manage.py   
     */serializers.py
+    */apps.py

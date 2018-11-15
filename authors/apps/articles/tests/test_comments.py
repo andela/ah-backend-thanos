@@ -1,9 +1,8 @@
 from rest_framework.reverse import reverse
 from rest_framework import status
-
+from authors.apps.articles.models import Article, Comment
 
 from .Basetest import BaseTest
-from authors.apps.articles.models import Article
 
 
 articles_url = reverse("articles:list_create")
@@ -125,3 +124,67 @@ class ArticleTests(BaseTest):
         self.assertEqual(result.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn("Sorry there are no comments for this article",
                       str(result.data))
+
+    def test_like_comment(self):
+        articles_url = reverse("articles:list_create")
+        self.client.post(articles_url, self.data, format='json')
+        self.client.post(self.url, self.comment_data, format='json')
+        article = Article.objects.all().first()
+        comment = Comment.objects.all().first()
+        article_id = article.id
+        comment_id = comment.id
+        like_status_url = reverse("articles:like_comment",
+                                  args=(article_id, comment_id,))
+        response = self.client.post(like_status_url,
+                                    self.like_status_data,
+                                    format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_get_comment_like(self):
+        articles_url = reverse("articles:list_create")
+        self.client.post(articles_url, self.data, format='json')
+        self.client.post(self.url, self.comment_data, format='json')
+        article = Article.objects.all().first()
+        comment = Comment.objects.all().first()
+        article_id = article.id
+        comment_id = comment.id
+        like_status_url = reverse(
+            "articles:like_comment", args=(article_id, comment_id,))
+        response = self.client.get(like_status_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_unlike_comment(self):
+        articles_url = reverse("articles:list_create")
+        self.client.post(articles_url, self.data, format='json')
+        self.client.post(self.url, self.comment_data, format='json')
+        article = Article.objects.all().first()
+        comment = Comment.objects.all().first()
+        article_id = article.id
+        comment_id = comment.id
+        like_status_url = reverse(
+            "articles:like_comment", args=(article_id, comment_id,))
+        self.client.post(like_status_url,
+                         self.like_status_data,
+                         format='json')
+        response = self.client.post(like_status_url,
+                                    self.like_status_data,
+                                    format='json')
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+    def test_change_like_comment_status(self):
+        articles_url = reverse("articles:list_create")
+        self.client.post(articles_url, self.data, format='json')
+        self.client.post(self.url, self.comment_data, format='json')
+        article = Article.objects.all().first()
+        comment = Comment.objects.all().first()
+        article_id = article.id
+        comment_id = comment.id
+        like_status_url = reverse(
+            "articles:like_comment", args=(article_id, comment_id,))
+        self.client.post(like_status_url,
+                         self.like_status_data,
+                         format='json')
+        response = self.client.post(like_status_url,
+                                    self.like_status_update_data,
+                                    format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

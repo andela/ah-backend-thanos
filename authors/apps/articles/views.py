@@ -8,16 +8,16 @@ from rest_framework.response import Response
 from rest_framework.exceptions import (NotAcceptable, NotFound,
                                        ParseError,)
 
-from .models import (Article, Comment, Thread, LikeArticle, Rating, Bookmark,
-                     FavoriteArticle,)
-from .renderers import (ArticleRenderer, CommentRenderer, ThreadRenderer,
-                        LikeStatusRenderer, RatingRenderer, BookmarkRenderer,
-                        FavoriteStatusRenderer)
+from .models import (Article, Comment, Thread, LikeArticle,
+                     Rating, Bookmark, LikeComment,  FavoriteArticle,)
+from .renderers import (ArticleRenderer, CommentRenderer,
+                        ThreadRenderer, FavoriteStatusRenderer,
+                        LikeStatusRenderer, RatingRenderer, BookmarkRenderer)
 from .serializers import (ArticleSerializer, ArticlesUpdateSerializer,
                           CommentSerializer, ThreadCreateSerializer,
                           LikeSerializer, LikeStatusUpdateSerializer,
                           RatingSerializer, BookmarkSerializer,
-                          FavoriteStatusSerializer,
+                          FavoriteStatusSerializer, LikeCommentSerializer,
                           FavoriteStatusUpdateSerializer,
                           GetFavoriteArticleSerializer, TagSerializer,
                           ArticlesUpdatesSerializer)
@@ -289,6 +289,68 @@ class CommentListCreateView(generics.ListCreateAPIView):
                 detail="Sorry there are no comments for this article",
                 code=404)
         return comment
+
+
+class LikeCommentAPIView(generics.GenericAPIView):
+    """
+    post: Create an  like or dislike.
+    get: Get Like Status
+    """
+    serializer_class = LikeCommentSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    renderer_classes = (LikeStatusRenderer,)
+
+    def post(self, request, *args, **kwargs):
+        article = Article.objects.filter(pk=kwargs['article_id']).exists()
+        comment = Comment.objects.filter(pk=kwargs['comment_id']).exists()
+
+        if not article or not comment:
+            raise NotFound(detail="Article or comment is Not found")
+        comment_id = kwargs['comment_id']
+        comment_data = Comment.objects.get(pk=kwargs['comment_id'])
+        like_status = request.data.get('like_status')
+        user, authour_username = get_id_from_token(request)
+
+        new_like_status = {
+            "comment": comment_data.id,
+            "comment_body": comment_data.comment_body,
+            "like_status": like_status,
+            "user": user
+        }
+        serializer = self.serializer_class(data=new_like_status)
+        serializer.is_valid(raise_exception=True)
+
+        if LikeComment.objects.filter(user=user)\
+                .filter(comment=comment_id)\
+                .filter(like_status=like_status).exists():
+            LikeComment.objects.filter(user=user)\
+                .filter(comment=comment_id)\
+                .filter(like_status=like_status).delete()
+            message = "You have updated the your like status"
+            return Response({"message": message},
+                            status=status.HTTP_202_ACCEPTED)
+
+        if LikeComment.objects.filter(user=user)\
+                .filter(comment=comment_id).exists():
+            LikeComment.objects.filter(user=user)\
+                .filter(comment=comment_id).update(like_status=like_status)
+            message = "You have updated the your like status"
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        comment = Comment.objects.get(pk=kwargs['comment_id'])
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def get(self, request, *args, **kwargs):
+        article = Article.objects.filter(pk=kwargs['article_id']).exists()
+        comment = Comment.objects.filter(pk=kwargs['comment_id']).exists()
+
+        if not article or not comment:
+            raise NotFound(detail="Article or comment is Not found")
+
+        like_status = LikeComment.objects.filter(comment=kwargs['comment_id'])
+        like_statuses = LikeCommentSerializer(like_status, many=True)
+        return Response(like_statuses.data, status=status.HTTP_200_OK)
 
 
 class LikeAPIView(generics.GenericAPIView):

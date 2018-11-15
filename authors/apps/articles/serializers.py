@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import (Article, Comment, Thread, LikeArticle, Rating,
-                     FavoriteArticle, Bookmark,)
+                     FavoriteArticle, Bookmark, LikeComment,)
 
 from rest_framework.exceptions import NotFound
 
@@ -36,7 +36,7 @@ class ArticleSerializer(TaggitSerializer, serializers.ModelSerializer):
                 "username": user_details.username,
                 "email": user_details.email}
             likes = LikeArticle.objects.filter(article=article_details["id"])\
-                                       .filter(like_status='like').count()
+                .filter(like_status='like').count()
             dislikes = LikeArticle.objects\
                                   .filter(article=article_details["id"])\
                                   .filter(like_status='dislike').count()
@@ -97,6 +97,13 @@ class CommentSerializer(serializers.ModelSerializer):
     def to_representation(self, data):
 
         comment_details = super().to_representation(data)
+        likes = LikeComment.objects.filter(comment=comment_details["id"])\
+            .filter(like_status='like').count()
+        dislikes = LikeComment.objects\
+            .filter(comment=comment_details["id"])\
+            .filter(like_status='dislike').count()
+        comment_details["likes"] = likes
+        comment_details["dislikes"] = dislikes
 
         return to_represent_article(comment_details, user='comment_author')
 
@@ -169,6 +176,26 @@ class LikeSerializer(serializers.ModelSerializer):
         like_status_details = super().to_representation(data)
 
         return to_represent_article(like_status_details, user='user')
+
+
+class LikeCommentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = LikeComment
+        fields = '__all__'
+
+    def to_representation(self, data):
+        '''
+        Show author's actual details instead of author's id
+        '''
+        like_status_details = super(
+            LikeCommentSerializer, self).to_representation(data)
+        if User.objects.filter(pk=int(like_status_details["user"])).exists():
+            user_details = User.objects.get(
+                pk=int(like_status_details["user"]))
+            like_status_details["user"] = user_details.username
+            return like_status_details
+        raise NotFound(detail="User does not exist", code=404)
 
 
 class FavoriteStatusSerializer(serializers.ModelSerializer):
