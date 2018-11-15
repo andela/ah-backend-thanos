@@ -148,3 +148,8 @@ class BaseTest(APITestCase):
         self.bookmark_url = reverse("articles:create_bookmark", args=(a_id,))
         self.unbookmark_url = reverse("articles:un_bookmark", args=(a_id,))
         self.report_url = reverse("articles:report_article", args=(a_id,))
+        self.share_email_url = reverse("articles:share_email", args=(a_id,))
+        self.share_facebook_url = reverse("articles:share_facebook",
+                                          args=(a_id,))
+        self.share_twitter_url = reverse("articles:share_twitter",
+                                         args=(a_id,))
