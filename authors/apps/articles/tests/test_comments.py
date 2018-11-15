@@ -89,16 +89,7 @@ class ArticleTests(BaseTest):
 
     def test_bookmark_not_found(self):
         """Test whether a article is not found for a bookmark"""
-        a_id = 1
-        bkmk_url = reverse("articles:create_bookmark", args=(a_id,))
-        response = self.client.post(bkmk_url,
-                                    format='json')
-        self.assertEqual(response.status_code,
-                         status.HTTP_404_NOT_FOUND)
-
-    def test_bookmark_article_not_found(self):
-        """Test whether a article is not found for a bookmark"""
-        response = self.client.post(bkmk_url,
+        response = self.client.post('api/articles/{}/bookmarks'.format(1000),
                                     format='json')
         self.assertEqual(response.status_code,
                          status.HTTP_404_NOT_FOUND)

@@ -1,4 +1,6 @@
 from django.urls import path
+from authors.apps.articles.share_articles import (
+    ShareEmailAPIView, ShareFacebookAPIView, ShareTwitterAPIView)
 
 from .views import (
     ArticlesListCreateAPIView, ArticleRetrieveUpdateDestroy,
@@ -43,6 +45,13 @@ urlpatterns = [
     path('tags', TagsListAPIView.as_view()),
     path('articles/<int:article_id>/comments/<int:comment_id>/like_status',
          LikeCommentAPIView.as_view(), name='like_comment'),
+    path('articles/<int:article_id>/email',
+         ShareEmailAPIView.as_view(), name='share_email'),
+    path('articles/<int:article_id>/facebook',
+         ShareFacebookAPIView.as_view(), name='share_facebook'),
+    path('articles/<int:article_id>/twitter',
+         ShareTwitterAPIView.as_view(), name='share_twitter'),
+
 
     path('articles/<int:article_id>/report', ReportArticleAPIView.as_view(),
          name='report_article')
