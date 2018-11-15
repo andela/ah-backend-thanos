@@ -168,7 +168,9 @@ class ArticleRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
 class FavoriteStatusAPIView(generics.GenericAPIView):
     """
-    post: Create an  favorite.
+    post: Favorite an article.
+    get: Get favourate status of an article
+    put: Update favourate status
     """
     serializer_class = FavoriteStatusSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
@@ -232,6 +234,9 @@ class FavoriteStatusAPIView(generics.GenericAPIView):
 
 
 class GetFavoriteArticles(generics.ListAPIView):
+    """
+    get: Retrieve all user's favourate articles
+    """
 
     queryset = Article.objects.all()
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
@@ -355,8 +360,9 @@ class LikeCommentAPIView(generics.GenericAPIView):
 
 class LikeAPIView(generics.GenericAPIView):
     """
-    post: Create an  like or dislike.
-    get: Get Like Status
+    post: Create a like or dislike.
+    get: Get Like Status.
+    put: Update a Like or a Dislike
     """
     serializer_class = LikeSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
@@ -453,7 +459,7 @@ class ThreadListCreateView(generics.ListCreateAPIView):
 
 
 class CommentDeleteView(generics.DestroyAPIView):
-    """Delete a comment"""
+    """delete: Delete a comment"""
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     renderer_classes = (CommentRenderer,)
     serializer_class = CommentSerializer
