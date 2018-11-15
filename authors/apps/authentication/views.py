@@ -144,13 +144,15 @@ class SendEmailPasswordReset(generics.CreateAPIView):
     """post: User send email for password reset."""
     permission_classes = (AllowAny,)
     serializer_class = SendPasswordResetEmailSerializer
+    renderer_classes = (UserJSONRenderer,)
 
     def post(self, request):
         email = request.data.get('email')
         if not User.objects.filter(email=email).exists():
-            raise serializers.ValidationError(
-                "User with that email does not exist",
-                code=400)
+            raise serializers.ValidationError({"error":
+                                               "User with that email"
+                                               " does not exist"},
+                                              code=400)
         dt = datetime.now()+timedelta(days=1)
         reset_password_token = jwt.encode({'email': email, 'exp': int(
             dt.strftime('%s'))}, settings.SECRET_KEY, 'HS256').decode('utf-8')
@@ -173,6 +175,7 @@ class ResetPassword(generics.GenericAPIView):
     permission_classes = (AllowAny,)
     look_url_kwarg = 'reset_password_token'
     serializer_class = UpdatePasswordSerializer
+    renderer_classes = (UserJSONRenderer,)
 
     def put(self, request, *args, **kwargs):
         token = self.kwargs.get(self.look_url_kwarg)
@@ -181,18 +184,19 @@ class ResetPassword(generics.GenericAPIView):
 
         if (new_password != confirm_password):
             # to override Django's built-in validation errors
-            raise serializers.ValidationError("The passwords do not match",
-                                              code=400)
+            raise serializers.ValidationError(
+                {"error":
+                 "The passwords do not match"})
         elif (
             re.compile(
                 r'^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,}$'
             ).search(new_password)
                 is None):
             raise serializers.ValidationError(
-                "Ensure your password is alphanumeric, with Minimum eight "
-                "characters, at least one letter, one number and one"
-                " special character",
-                code=400
+                {"error":
+                 "Ensure your password is alphanumeric, with Minimum eight "
+                 "characters, at least one letter, one number and one"
+                 " special character"}
             )
         decode_token = jwt.decode(
             token, settings.SECRET_KEY, algorithms=['HS256'])
@@ -220,15 +224,26 @@ class OauthAPIView(generics.GenericAPIView):
         if auth_provider_url is not None:
             redirect_to_login_url = """{}://{}{}""".format(
                 request.scheme, request.get_host(), auth_provider_url)
-            return Response(redirect_to_login_url, status.HTTP_200_OK)
-        return Response({"error": "Please Login with google, \
-                facebook or twitter"}, status.HTTP_400_BAD_REQUEST)
+            message = message = {
+                "status_code": 200,
+                "results": {
+                    "message": redirect_to_login_url
+                }
+            }
+            return Response(message, status.HTTP_200_OK)
+        message = message = {
+            "status_code": 400,
+            "results": {
+                "error": "Please Login with google,"
+                "facebook or twitter"
+            }
+        }
+        return Response(message, status.HTTP_400_BAD_REQUEST)
 
 
 class OauthlLoginAPIView(APIView):  # pragma: no cover
     """get: User login using social authentication."""
     permission_classes = (AllowAny,)
-    renderer_classes = (UserJSONRenderer,)
 
     def get(self, request):  # pragma: no cover
         try:
@@ -239,5 +254,11 @@ class OauthlLoginAPIView(APIView):  # pragma: no cover
             }
             return Response(response, status.HTTP_200_OK)  # pragma: no cover
         except(NameError):  # pragma: no cover
-            return Response({"error": "Unable to login"},
+            message = {
+                "status_code": 400,
+                "results": {
+                    "error": "Unable to login, please try again"
+                }
+            }
+            return Response(message,
                             status.HTTP_400_BAD_REQUEST)

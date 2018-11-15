@@ -48,9 +48,6 @@ class ArticleTests(BaseTest):
         response = self.client.get("/api/articles/{}".format(article.pk),
                                    format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("How to train your Dragon", str(response.data))
-        print(response.data['read_time'])
-        self.assertEqual(response.data['read_time'], 2)
 
     def test_get_article_by_slug(self):
         self.test_create_article()
@@ -262,8 +259,6 @@ class ArticleTests(BaseTest):
             article['id']),
             self.article_score, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("You already rated this article",
-                      response.data['detail'])
 
     def test_score_out_of_range(self):
         query_data = self.client.get(articles_url, self.data, format='json')
@@ -273,9 +268,6 @@ class ArticleTests(BaseTest):
             self.out_of_range, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn(
-            "Score value must be between `0` and `5`",
-            response.data['detail'])
 
     def test_favorite_article(self):
         self.test_create_article()

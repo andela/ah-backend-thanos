@@ -24,7 +24,7 @@ def create_bookmarks(self, request, article_id):
         article_id=article.id,
         user=request.user.id).first()
     if bookmark:
-        return Response({"message": "This has already been bookmarked"})
+        return Response({"message": "This has already been bookmarked"}, 200)
     self.perform_create(serializer, article)
     return Response(serializer.data, 201)
 

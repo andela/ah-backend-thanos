@@ -4,8 +4,7 @@ from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from rest_framework.exceptions import AuthenticationFailed
 
-from rest_framework.serializers import ValidationError
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ParseError
 
 from authors.apps.authentication.models import User
 from authors.apps.profiles.models import Profile
@@ -32,7 +31,7 @@ def validate_author(current_user_id, author_id):
     if current_user_id != author_id:
         raise AuthenticationFailed(
             detail="You do not have permissions to this Article",
-            code=403)
+            )
 
 
 def getUserFromDatabase(pk=0, username=""):
@@ -54,7 +53,6 @@ def getProfileFromDatabase(user_id):
 
 def validateCurrentUserSelectedUser(current_user_id, selected_user_id):
     if current_user_id == selected_user_id:
-        raise ValidationError(
-            detail="The current user is the same as the selected user",
-            code=400
+        raise ParseError(
+            detail="The current user is the same as the selected user"
         )

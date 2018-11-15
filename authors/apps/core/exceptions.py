@@ -21,6 +21,10 @@ def core_exception_handler(exc, context):
         # handler.
         return handlers[exception_class](exc, context, response)
 
+    if response is not None:
+        response.data['error'] = response.data['detail']
+        del response.data['detail']
+
     return response
 
 

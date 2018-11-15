@@ -12,7 +12,7 @@ class UserJSONRenderer(JSONRenderer):
         # the default JSONRenderer to handle rendering errors, so we need to
         # check for this case.
         errors = data.get('results', None)
-
+        response = renderer_context['response']
         # Here we get the token
         token = data.get('token', None)
 
@@ -28,5 +28,6 @@ class UserJSONRenderer(JSONRenderer):
 
         # Finally, we can render our data under the "user" namespace.
         return json.dumps({
-            'user': data
+            'status_code': response.status_code,
+            'results': data
         })
