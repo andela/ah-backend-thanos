@@ -1,5 +1,6 @@
 import time
 from django.shortcuts import get_object_or_404
+from authors.apps.authentication.send_email_util import SendEmail
 
 from rest_framework import status
 from rest_framework import generics
@@ -8,11 +9,12 @@ from rest_framework.response import Response
 from rest_framework.exceptions import (NotAcceptable, NotFound,
                                        ParseError,)
 
-from .models import (Article, Comment, Thread, LikeArticle,
-                     Rating, Bookmark, LikeComment,  FavoriteArticle,)
-from .renderers import (ArticleRenderer, CommentRenderer,
-                        ThreadRenderer, FavoriteStatusRenderer,
-                        LikeStatusRenderer, RatingRenderer, BookmarkRenderer)
+from .models import (Article, Comment, Thread, LikeArticle, LikeComment,
+                     Rating, Bookmark,
+                     FavoriteArticle,)
+from .renderers import (ArticleRenderer, CommentRenderer, ThreadRenderer,
+                        LikeStatusRenderer, RatingRenderer, BookmarkRenderer,
+                        FavoriteStatusRenderer, ReportArticleRenderer,)
 from .serializers import (ArticleSerializer, ArticlesUpdateSerializer,
                           CommentSerializer, ThreadCreateSerializer,
                           LikeSerializer, LikeStatusUpdateSerializer,
@@ -20,7 +22,7 @@ from .serializers import (ArticleSerializer, ArticlesUpdateSerializer,
                           FavoriteStatusSerializer, LikeCommentSerializer,
                           FavoriteStatusUpdateSerializer,
                           GetFavoriteArticleSerializer, TagSerializer,
-                          ArticlesUpdatesSerializer)
+                          ArticlesUpdatesSerializer, ReportArticleSerializer,)
 from authors.apps.core.utils.generate_slug import generate_slug
 from authors.apps.core.utils.readtime import read_time
 from authors.apps.core.utils.user_management import (
@@ -542,12 +544,23 @@ class BookmarkListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer, article):
         serializer.save(user=self.request.user, article=article)
 
+    def get_queryset(self):
+        if not Article.objects.filter(pk=self.kwargs['pk']).exists():
+            raise NotFound(
+                detail="Sorry this article doesn't exist", code=404)
+
+        bookmarks = Bookmark.objects.filter(article=self.kwargs['pk'])
+        if not bookmarks:
+            raise NotFound(
+                detail="Sorry there are no bookmarks for this article",
+                code=404)
+        return bookmarks
+
 
 class BookmarkDestroyView(generics.DestroyAPIView):
     """
     delete: Delete a Bookmark
     """
-    queryset = Article.objects.all()
     serializer_class = BookmarkSerializer
     renderer_classes = (BookmarkRenderer,)
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
@@ -570,3 +583,35 @@ class TagsListAPIView(generics.ListAPIView):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (permissions.AllowAny,)
+
+
+class ReportArticleAPIView(generics.CreateAPIView):
+    """
+    Post: Report an article
+    """
+    serializer_class = ReportArticleSerializer
+    renderer_classes = (ReportArticleRenderer,)
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'article_id'
+
+    def create(self, request, article_id, *args, **kwargs):
+        report = {'user': request.user.id,
+                  'article': article_id,
+                  'reason': request.data.get('reason')}
+        serializer = self.serializer_class(data=report)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        reason = report['reason']
+        user = request.user.email
+        self.email = 'donotreply.websitemailer@gmail.com'
+        self.mail_subject = "This article has been Reported!"
+        self.message = """
+        Hi Admin,
+        This article has been reported by {}:
+        {}://{}/api/articles/{}
+
+        Reason: {}
+        """.format(user, request.scheme,
+                   request.get_host(), article_id, reason)
+        SendEmail.send_email(self, self.mail_subject, self.message, self.email)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

@@ -1,6 +1,7 @@
 import jwt
 
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from rest_framework.exceptions import AuthenticationFailed
 
 from rest_framework.serializers import ValidationError
@@ -17,14 +18,13 @@ def get_id_from_token(request):
 
 
 def get_id_from_token_for_viewcount(request):
-    auth = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')
-    # payload = jwt.decode(auth, settings.SECRET_KEY, 'utf-8')
-    # return payload['id'], payload['username']
-    if len(auth) > 1:
+    if request.user == AnonymousUser():
+        return 0
+    else:
+        auth = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')
         token = auth[1]
         payload = jwt.decode(token, settings.SECRET_KEY, 'utf-8')
         return payload['id']
-    return 0
 
 
 def validate_author(current_user_id, author_id):

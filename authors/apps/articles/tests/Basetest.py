@@ -112,6 +112,9 @@ class BaseTest(APITestCase):
             "rating": 6
         }
 
+        self.report_data = {
+            'reason': 'This article was copied'
+        }
         self.response = self.client.post(
             signup_url, self.signup_data, format="json")
 
@@ -144,3 +147,4 @@ class BaseTest(APITestCase):
                                   args=(a_id, c_id,))
         self.bookmark_url = reverse("articles:create_bookmark", args=(a_id,))
         self.unbookmark_url = reverse("articles:un_bookmark", args=(a_id,))
+        self.report_url = reverse("articles:report_article", args=(a_id,))

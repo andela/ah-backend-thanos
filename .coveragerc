@@ -20,3 +20,4 @@ omit =
     */manage.py   
     */serializers.py
     */apps.py
+    */renderers.py

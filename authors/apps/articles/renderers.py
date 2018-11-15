@@ -3,7 +3,6 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.utils.serializer_helpers import ReturnList
 
 from ..core.utils.general_renderer import GeneralRenderer
-from .models import Article
 
 
 class ArticleRenderer(JSONRenderer):
@@ -63,3 +62,8 @@ class BookmarkRenderer(GeneralRenderer):
 class FavoriteStatusRenderer(JSONRenderer):
     charset = 'utf-8'
     object_name = 'favorite_status'
+
+
+class ReportArticleRenderer(JSONRenderer):
+    charset = 'utf-8'
+    object_name = 'reports'
