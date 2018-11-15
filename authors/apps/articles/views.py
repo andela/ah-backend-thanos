@@ -22,6 +22,7 @@ from .serializers import (ArticleSerializer, ArticlesUpdateSerializer,
                           GetFavoriteArticleSerializer, TagSerializer,
                           ArticlesUpdatesSerializer)
 from authors.apps.core.utils.generate_slug import generate_slug
+from authors.apps.core.utils.readtime import read_time
 from authors.apps.core.utils.user_management import (
     get_id_from_token,
     validate_author,
@@ -69,6 +70,8 @@ class ArticlesListCreateAPIView(generics.ListCreateAPIView):
         if Article.objects.filter(slug=slug).exists():
             slug += str(time.time()).replace('.', '')
 
+        readtime = read_time(body)
+
         article = {
             "slug": slug,
             "title": title,
@@ -77,7 +80,8 @@ class ArticlesListCreateAPIView(generics.ListCreateAPIView):
             "tag_list": tag_list,
             "image_url": image_url,
             "author": author_id,
-            "audio_url": audio_url
+            "audio_url": audio_url,
+            "read_time": readtime
         }
         serializer = self.serializer_class(data=article)
         serializer.is_valid(raise_exception=True)
@@ -122,6 +126,7 @@ class ArticleRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         article_id = kwargs['pk']
         article_not_found(article_id)
         article = Article.objects.get(pk=kwargs['pk'])
+
         title = request.data.get('title', article.title)
         slug = generate_slug(title)
         if Article.objects.filter(slug=slug).exists():
@@ -129,6 +134,7 @@ class ArticleRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
         author_id, author_username, = get_id_from_token(request)
         validate_author(author_id, article.author.id)
+
         fresh_article_data = {
             "slug": slug,
             "title": title,
@@ -140,7 +146,8 @@ class ArticleRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
                 [str(tag) for tag in article.tag_list.all()]
             ),
             "image_url": request.data.get('image_url', article.image_url),
-            "audio_url": request.data.get('audio_url', article.audio_url)
+            "audio_url": request.data.get('audio_url', article.audio_url),
+            "read_time": read_time(request.data.get('body'))
         }
 
         serializer = ArticlesUpdateSerializer(data=fresh_article_data)
