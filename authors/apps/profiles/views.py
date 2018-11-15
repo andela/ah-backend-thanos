@@ -68,9 +68,8 @@ class ProfileRetrieveUpdateAPIView(GenericAPIView):
 
 
 class ProfileListAPIView(ListAPIView):
-    """
-    get: Allow user to view other user profiles
-    """
+    """Allow user to view other user profiles"""
+    renderer_classes = (ProfileJSONRenderer,)
     permission_classes = (IsAuthenticated, )
     serializer_class = ProfileSerializer
     queryset = Profile.objects.all()

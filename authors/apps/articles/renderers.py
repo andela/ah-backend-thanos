@@ -2,7 +2,7 @@ import json
 from rest_framework.renderers import JSONRenderer
 from rest_framework.utils.serializer_helpers import ReturnList
 
-from ..core.utils.general_renderer import GeneralRenderer
+from authors.apps.core.utils.general_renderer import GeneralRenderer
 
 
 class ArticleRenderer(JSONRenderer):
@@ -14,34 +14,37 @@ class ArticleRenderer(JSONRenderer):
         key = "articles", value = a LIST of articles
         ke y = "articlesCount", value = number of articles
         '''
+        response = renderer_context['response']
         if type(data) != ReturnList:
             errors = data.get('results', None)
             if errors is not None:
                 return super().render(data)
             else:
-                return json.dumps(
-                    data
-                )
+                return json.dumps({
+                    'status_code': response.status_code,
+                    'results': data
+                })
         else:
             return json.dumps({
-                'articles': data,
+                'status_code': response.status_code,
+                'results': data,
                 'articlesCount': len(data)
             })
 
 
 class CommentRenderer(GeneralRenderer):
     charset = 'utf-8'
-    object_name = 'comments'
+    object_name = 'results'
 
 
 class ThreadRenderer(GeneralRenderer):
     charset = 'utf-8'
-    object_name = 'threads'
+    object_name = 'results'
 
 
 class LikeStatusRenderer(GeneralRenderer):
     charset = 'utf-8'
-    object_name = 'Like_status'
+    object_name = 'results'
 
 
 class RatingRenderer(JSONRenderer):
@@ -49,21 +52,24 @@ class RatingRenderer(JSONRenderer):
     charset = 'utf-8'
 
     def render(self, data, media_type=None, renderer_context=None):
+        response = renderer_context['response']
         return json.dumps({
-            "article_scores": data,
+            'status_code': response.status_code,
+            "results": data,
         })
 
 
 class BookmarkRenderer(GeneralRenderer):
     charset = 'utf-8'
-    object_name = 'bookmark'
+    object_name = 'results'
 
 
-class FavoriteStatusRenderer(JSONRenderer):
+class FavoriteStatusRenderer(GeneralRenderer):
     charset = 'utf-8'
-    object_name = 'favorite_status'
+    object_name = 'results'
 
 
 class ReportArticleRenderer(JSONRenderer):
     charset = 'utf-8'
-    object_name = 'reports'
+    object_name = 'results'
+

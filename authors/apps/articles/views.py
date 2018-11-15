@@ -183,7 +183,7 @@ class ThreadListCreateView(generics.ListCreateAPIView):
         return threads_crud.get_comment_thread(self.kwargs['comment_id'])
 
 
-class ArticleRating(generics.ListCreateAPIView):
+class ArticleRating(generics.CreateAPIView):
     """
     get: list ratings
     post: rate an article

@@ -89,12 +89,19 @@ class ArticleTests(BaseTest):
 
     def test_bookmark_not_found(self):
         """Test whether a article is not found for a bookmark"""
+        a_id = 1
+        bkmk_url = reverse("articles:create_bookmark", args=(a_id,))
         response = self.client.post(bkmk_url,
                                     format='json')
         self.assertEqual(response.status_code,
                          status.HTTP_404_NOT_FOUND)
-        print(response.data)
-        self.assertIn('Not found', str(response.data))
+
+    def test_bookmark_article_not_found(self):
+        """Test whether a article is not found for a bookmark"""
+        response = self.client.post(bkmk_url,
+                                    format='json')
+        self.assertEqual(response.status_code,
+                         status.HTTP_404_NOT_FOUND)
 
     def test_delete_comment(self):
         self.test_create_comment()
@@ -110,6 +117,14 @@ class ArticleTests(BaseTest):
             self.url, self.data, format='json')
         result = self.client.post(self.bookmark_url, format="json")
         self.assertEqual(result.status_code, status.HTTP_201_CREATED)
+
+    def test_get_bookmark(self):
+        """Test if the article has been bookmarked"""
+        self.res = self.client.post(
+            self.url, self.data, format='json')
+        self.client.post(self.bookmark_url, format="json")
+        result = self.client.get(self.bookmark_url, format="json")
+        self.assertEqual(result.status_code, status.HTTP_200_OK)
 
     def test_delete_bookmark(self):
         """Test if the bookmark can be deleted"""
