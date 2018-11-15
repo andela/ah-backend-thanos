@@ -16,7 +16,7 @@ class BaseTestCase(APITestCase):
     def setUp(self):
         self.user_data = {
             "user": {
-                "email": "judeinno@gmail.com",
+                "email": "judeinn@gmail.com",
                 "username": "jude",
                 "password": "testpassword#123"
             }
@@ -30,21 +30,21 @@ class BaseTestCase(APITestCase):
         }
         self.invalid_username = {
             "user": {
-                "email": "judeinno@gmail.com",
+                "email": "judeinn@gmail.com",
                 "username": "<@#!$%^$^",
                 "password": "testpassword"
             }
         }
         self.invalid_pass_data = {
             "user": {
-                "email": "judeinno@gmail.com",
+                "email": "judeinn@gmail.com",
                 "username": "testuser",
                 "password": "123345678"
             }
         }
         self.pass_less8_data = {
             "user": {
-                "email": "judeinno@gmail.com",
+                "email": "judeinn@gmail.com",
                 "username": "testuser",
                 "password": "12345l",
             }
@@ -52,7 +52,7 @@ class BaseTestCase(APITestCase):
         self.alp_pass_data = {
             "user": {
                 "username": "jude",
-                "email": "judeinno@gmail.com",
+                "email": "judeinn@gmail.com",
                 "password": "judesecret"
             }
         }
@@ -123,3 +123,5 @@ class BaseTestCase(APITestCase):
             self.reset_password_token)
         self.reset_password_send_email_data = {"email": "daniel@test.com"}
         self.reset_password_wrong_email_data = {"email": "judesg@gmail.com"}
+
+        self.subscribe_status_update_data = {"is_subscribed": "False"}

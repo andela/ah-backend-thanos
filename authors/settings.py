@@ -232,3 +232,10 @@ SOCIAL_AUTH_TWITTER_OAUTH2_SCOPE = ['email']
 SOCIAL_AUTH_TWITTER_PROFILE_EXTRA_PARAMS = {'fields': 'id, name, email'}
 
 django_heroku.settings(locals())
+
+CELERY_BROKER_URL = 'amqp://ujqpmrgj:nZPsiypPuetFTBKFB6K85CzGnAxNH1w8@baboon.rmq.cloudamqp.com/ujqpmrgj'
+CELERY_RESULT_BACKEND = 'amqp://ujqpmrgj:nZPsiypPuetFTBKFB6K85CzGnAxNH1w8@baboon.rmq.cloudamqp.com/ujqpmrgj'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Africa/Nairobi'
