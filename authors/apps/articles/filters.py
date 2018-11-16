@@ -11,10 +11,10 @@ class ArticlesFilter(FilterSet):
         return queryset.filter(title__icontains=value)
 
     def get_author(self, queryset, name, value):
-        return queryset.filter(author__username=value)
+        return queryset.filter(author__username__icontains=value)
 
     def get_tags(self, queryset, name, value):
-        return queryset.filter(tag_list__name__icontains=value)
+        return queryset.filter(tag_list__name=value)
 
     class Meta():
         model = Article

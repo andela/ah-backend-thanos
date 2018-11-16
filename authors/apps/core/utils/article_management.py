@@ -1,5 +1,5 @@
 from rest_framework.exceptions import NotFound
-from rest_framework import serializers
+from authors.apps.articles import serializers
 from authors.apps.articles.models import Article
 from authors.apps.core.utils.user_management import get_id_from_token
 
