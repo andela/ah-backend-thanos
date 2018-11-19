@@ -41,6 +41,15 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return User.objects.create_user(**validated_data, profile=profile)
 
 
+class UnsubscribeNotificationsSerializer(serializers.ModelSerializer):
+
+    is_subscribed = serializers.BooleanField(default=True)
+
+    class Meta:
+        model = User
+        fields = ['is_subscribed']
+
+
 class LoginSerializer(serializers.Serializer):
     email = serializers.CharField(max_length=255)
     username = serializers.CharField(max_length=255, read_only=True)

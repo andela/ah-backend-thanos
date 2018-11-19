@@ -21,3 +21,4 @@ omit =
     */serializers.py
     */apps.py
     */renderers.py
+    */__init__.py

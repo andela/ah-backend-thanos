@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.exceptions import NotFound
 from . import models
+from ...settings import TESTING
+from authors.apps.core.tasks import notification_new_comment
 from authors.apps.core.utils.user_management import (
     get_id_from_token, validate_author)
 
@@ -20,6 +22,7 @@ def get_comments(self, article_pk):
 
 
 def create_comment(self, request, article_pk):
+    current_user = request.user
     serializer_context = {
         'comment_author': request.user.profile,
         'article': get_object_or_404(models.Article, id=article_pk)
@@ -30,8 +33,14 @@ def create_comment(self, request, article_pk):
         data=serializer_data,
     )
     serializer.is_valid(raise_exception=True)
-    serializer.save()
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+    if TESTING is True:
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    elif TESTING is False:  # pragma: no cover
+        notification_new_comment.delay(
+            current_user.id, article_pk)  # pragma: no cover
+        serializer.save()  # pragma: no cover
+        return Response(serializer.data, status=status.HTTP_201_CREATED)  # pragma: no cover
 
 
 def delete_comment(self, request, comment_id, article_id):

@@ -13,12 +13,17 @@ from rest_framework.views import APIView
 from datetime import datetime, timedelta
 import jwt
 import re
+from authors.apps.core.utils.user_management import (
+    get_id_from_token,
+)
+from rest_framework import permissions
+from rest_framework.exceptions import AuthenticationFailed
 
 from .renderers import UserJSONRenderer
 from .serializers import (
     LoginSerializer, RegistrationSerializer,
     UpdatePasswordSerializer,
-    SendPasswordResetEmailSerializer
+    SendPasswordResetEmailSerializer, UnsubscribeNotificationsSerializer
 )
 from .send_email_util import SendEmail
 
@@ -262,3 +267,31 @@ class OauthlLoginAPIView(APIView):  # pragma: no cover
             }
             return Response(message,
                             status.HTTP_400_BAD_REQUEST)
+
+
+class UnsubscribeNotifications(generics.GenericAPIView):
+
+    serializer_class = UnsubscribeNotificationsSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    lookup_field = 'pk'
+    renderer_classes = (UserJSONRenderer,)
+
+    def put(self, request, *args, **kwargs):
+        user_id = kwargs['pk']
+        user, username_current = get_id_from_token(request)
+        if user != user_id:
+            raise AuthenticationFailed(
+                detail="You do not have permissions change this.")
+
+        current_subscirbe_data = User.objects.get(
+            pk=user_id)
+        subscribe_update = request.data.get(
+            'is_subscribed', current_subscirbe_data.is_subscribed)
+        new_subscription = {
+            "is_subscribed": subscribe_update,
+        }
+        serializer = UnsubscribeNotificationsSerializer(
+            data=new_subscription)
+        serializer.is_valid(raise_exception=True)
+        serializer.update(current_subscirbe_data, new_subscription)
+        return Response(serializer.data, status=status.HTTP_200_OK)

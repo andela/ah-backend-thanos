@@ -7,6 +7,8 @@ from authors.apps.core.utils.article_management import (
 from authors.apps.core.utils.user_management import (
     get_id_from_token, validate_author)
 from authors.apps.core.utils.readtime import read_time
+from authors.apps.core.tasks import notification
+from ...settings import TESTING
 
 
 def create_article(request, author_id):
@@ -27,8 +29,13 @@ def create_article(request, author_id):
     }
     serializer = serializers.ArticleSerializer(data=article_data)
     serializer.is_valid(raise_exception=True)
-    serializer.save()
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+    if TESTING is True:
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    elif TESTING is False:  # pragma: no cover
+        notification.delay(author_id)  # pragma: no cover
+        serializer.save()  # pragma: no cover
+        return Response(serializer.data, status=status.HTTP_201_CREATED)  # pragma: no cover
 
 
 def update_article(request, article_pk):
