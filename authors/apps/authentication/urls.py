@@ -3,7 +3,7 @@ from django.urls import path
 from .views import (
     LoginAPIView, RegistrationAPIView, AccountVerificationAPIView,
     SendEmailPasswordReset, ResetPassword, OauthAPIView, OauthlLoginAPIView,
-    UnsubscribeNotifications
+    UnsubscribeNotifications, FacebookAPIView, GoogleAPIView, TwitterAPIView
 )
 from authors.apps.profiles.views import (
     FollowGenericAPIView, FollowingListAPIView, FollowersListAPIView
@@ -24,6 +24,14 @@ urlpatterns = [
     path('auth/<social_auth_Provider>', OauthAPIView.as_view(),
          name='oauth-singIn'),
     path('auth/users/login', OauthlLoginAPIView.as_view(), name='oauth-login'),
+    path('auth/facebook/<str:access_token>', FacebookAPIView.as_view(),
+         name='facebook-auth'),
+    path('auth/google/<str:access_token>', GoogleAPIView.as_view(),
+         name='google-auth'),
+
+    path('auth/twitter/<str:access_key>/<str:access_secret>',
+         TwitterAPIView.as_view(),
+         name='twitter-auth'),
 
     # follow: POST /api/users/<id>/follow
     # Unfollow: DELETE /api/users/<id>/follow
