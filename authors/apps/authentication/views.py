@@ -153,11 +153,19 @@ class SendEmailPasswordReset(generics.CreateAPIView):
 
     def post(self, request):
         email = request.data.get('email')
+        callback_url = request.data.get('callback_url')
+        
+		
         if not User.objects.filter(email=email).exists():
             raise serializers.ValidationError({"error":
                                                "User with that email"
                                                " does not exist"},
                                               code=400)
+
+        if callback_url == None:
+            raise serializers.ValidationError({"error":
+			 "Please supply the callback url"}, code=400)
+
         dt = datetime.now()+timedelta(days=1)
         reset_password_token = jwt.encode({'email': email, 'exp': int(
             dt.strftime('%s'))}, settings.SECRET_KEY, 'HS256').decode('utf-8')
@@ -165,8 +173,7 @@ class SendEmailPasswordReset(generics.CreateAPIView):
         self.message = """
             Hi,
             Please click on the link to reset your password,
-            {}://{}/api/users/reset_password/{}""".format(request.scheme,
-                                                          request.get_host(),
+            {}?{}""".format(callback_url,
                                                           reset_password_token)
         SendEmail.send_email(self, self.mail_subject, self.message, email)
         return Response({"message":

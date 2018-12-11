@@ -84,6 +84,8 @@ class BaseTestCase(APITestCase):
             "email": "daniel@test.com"
         }
 
+        self.password_reset_payload_no_redirect = {"email": "daniel@test.com",}
+
         self.reset_password_data = {
             "new_password": "password1234@",
             "confirm_password": "password1234@"
@@ -121,7 +123,7 @@ class BaseTestCase(APITestCase):
             dt.strftime('%s'))}, settings.SECRET_KEY, 'HS256').decode('utf-8')
         self.url_reset_password = "/api/users/reset_password/{}".format(
             self.reset_password_token)
-        self.reset_password_send_email_data = {"email": "daniel@test.com"}
+        self.reset_password_send_email_data = {"email": "daniel@test.com", "callback_url":"https://www.pivotaltracker.com/n/projects/2206434"}
         self.reset_password_wrong_email_data = {"email": "judesg@gmail.com"}
 
         self.subscribe_status_update_data = {"is_subscribed": "False"}
