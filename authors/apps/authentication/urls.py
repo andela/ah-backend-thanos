@@ -27,14 +27,14 @@ urlpatterns = [
 
     # follow: POST /api/users/<id>/follow
     # Unfollow: DELETE /api/users/<id>/follow
-    path('users/<int:pk>/follow',
+    path('users/<str:username>/follow',
          FollowGenericAPIView.as_view()),
 
     # see followers GET /api/users/<id>/followers
-    path('users/<int:pk>/followers',
+    path('users/<str:username>/followers',
          FollowersListAPIView.as_view()),
 
     # see users one is following GET /api/users/<id>/following
-    path('users/<int:pk>/following',
+    path('users/<str:username>/following',
          FollowingListAPIView.as_view())
 ]
