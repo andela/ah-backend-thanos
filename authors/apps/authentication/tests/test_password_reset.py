@@ -43,6 +43,18 @@ class UserApiTestCase(BaseTestCase):
         self.assertEqual(response_reset_password_wrong_data.status_code,
                          status.HTTP_400_BAD_REQUEST)
 
+    def test_redirect_url_is_not_provided(self):
+        response_reset_password = self.client.post(
+            url_password_reset_email,
+			self.password_reset_payload_no_redirect,
+			format="json")
+        self.assertIn(
+			"Please supply the callback url", str(response_reset_password.data)
+		)
+        self.assertEqual(response_reset_password.status_code,
+						status.HTTP_400_BAD_REQUEST)
+
+
     def test_password_reset_donot_match(self):
 
         # password reset with data that does not match
