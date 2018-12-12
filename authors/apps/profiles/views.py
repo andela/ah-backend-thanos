@@ -83,24 +83,28 @@ class FollowGenericAPIView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     renderer_classes = (ProfileJSONRenderer,)
 
-    def post(self, request, pk, *args, **kwargs):
-        user_to_follow = getUserFromDatabase(pk)
-        current_user_id, email = get_id_from_token(request)
+    def post(self, request, username, *args, **kwargs):
+        user_to_follow = getUserFromDatabase(username=username)
+        current_user_id, current_username = get_id_from_token(request)
         validateCurrentUserSelectedUser(current_user_id, user_to_follow.id)
-        follow_data = {"follower": current_user_id, "followee": pk}
+        follow_data = {
+            "follower": current_user_id,
+            "followee": user_to_follow.id
+        }
         serializer = FollowerFolloweePairSerializer(data=follow_data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         # return profile of the user you just followed
-        profile_followed = getProfileFromDatabase(user_id=pk)
+        profile_followed = getProfileFromDatabase(user_id=user_to_follow.id)
         user_serializer = ProfileSerializer(profile_followed)
         return Response(user_serializer.data, status=status.HTTP_201_CREATED)
 
-    def delete(self, request, pk, *args, **kwargs):
-        getUserFromDatabase(pk)  # validate user exists
-        current_id, email = get_id_from_token(request)
-        if Follow.objects.filter(follower=current_id, followee=pk).exists():
-            Follow.objects.get(follower=current_id, followee=pk).delete()
+    def delete(self, request, username, *args, **kwargs):
+        user_to_unfollow = getUserFromDatabase(username=username)  # validate
+        id = user_to_unfollow.id
+        current_id, current_username = get_id_from_token(request)
+        if Follow.objects.filter(follower=current_id, followee=id).exists():
+            Follow.objects.get(follower=current_id, followee=id).delete()
             return Response({"message": "You have Unfollowed the User"},
                             status=status.HTTP_200_OK)
         raise NotFound(detail="You are currently not following this user")
@@ -113,9 +117,9 @@ class FollowingListAPIView(ListAPIView):
     permission_classes = (IsAuthenticated,)
     renderer_classes = (ProfileJSONRenderer,)
 
-    def get(self, request, pk, *args, **kwargs):
-        getUserFromDatabase(pk)  # validate user exists
-        follow = Follow.objects.filter(follower=pk)
+    def get(self, request, username, *args, **kwargs):
+        user = getUserFromDatabase(username=username)  # validate user exists
+        follow = Follow.objects.filter(follower=user.id)
         if follow.count() == 0:
             raise NotFound(detail="This user is not following anyone")
         serializer = FollowSerializer(
@@ -132,9 +136,9 @@ class FollowersListAPIView(ListAPIView):
     permission_classes = (IsAuthenticated,)
     renderer_classes = (ProfileJSONRenderer,)
 
-    def get(self, request, pk, *args, **kwargs):
-        getUserFromDatabase(pk)  # validate user exists
-        follow = Follow.objects.filter(followee=pk)
+    def get(self, request, username, *args, **kwargs):
+        user = getUserFromDatabase(username=username)  # validate user exists
+        follow = Follow.objects.filter(followee=user.id)
         if follow.count() == 0:
             raise NotFound(detail="This user is not being followed by anyone")
         serializer = FollowSerializer(follow, many=True)

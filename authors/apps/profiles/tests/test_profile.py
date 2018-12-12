@@ -158,7 +158,7 @@ class ProfileApiTestCase(UserBaseTestCase):
     def test_follow_another_user(self):
         """Test whether user A (current user) can follow user B"""
         user_b = User.objects.all().last()
-        res = self.client.post("/api/users/{}/follow".format(user_b.id),
+        res = self.client.post("/api/users/{}/follow".format(user_b.username),
                                {},
                                format='json')
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
@@ -167,7 +167,7 @@ class ProfileApiTestCase(UserBaseTestCase):
     def test_follow_oneself(self):
         """Test whether user A (current user) can follow themselves"""
         user_a = User.objects.all().first()
-        res = self.client.post("/api/users/{}/follow".format(user_a.id),
+        res = self.client.post("/api/users/{}/follow".format(user_a.username),
                                {},
                                format='json')
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
@@ -178,7 +178,7 @@ class ProfileApiTestCase(UserBaseTestCase):
         """Test wheter user A (current) can follow user B twice"""
         self.test_follow_another_user()
         user_b = User.objects.all().last()
-        res = self.client.post("/api/users/{}/follow".format(user_b.id),
+        res = self.client.post("/api/users/{}/follow".format(user_b.username),
                                {},
                                format='json')
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
@@ -197,8 +197,10 @@ class ProfileApiTestCase(UserBaseTestCase):
         """Test whether wheter user A (current) can unfollow user B"""
         self.test_follow_another_user()
         user_b = User.objects.all().last()
-        res = self.client.delete("/api/users/{}/follow".format(user_b.id),
-                                 format='json')
+        res = self.client.delete(
+            "/api/users/{}/follow".format(user_b.username),
+            format='json'
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn("You have Unfollowed the User", str(res.data))
 
@@ -206,8 +208,10 @@ class ProfileApiTestCase(UserBaseTestCase):
         """Test whether user A (current) can Unfollow user B twice"""
         self.test_unfollow_user()
         user_b = User.objects.all().last()
-        res = self.client.delete("/api/users/{}/follow".format(user_b.id),
-                                 format='json')
+        res = self.client.delete(
+            "/api/users/{}/follow".format(user_b.username),
+            format='json'
+        )
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn("You are currently not following this user",
                       str(res.data))
@@ -226,7 +230,7 @@ class ProfileApiTestCase(UserBaseTestCase):
         """
         user_b = User.objects.all().last()
         res = self.client.get(
-            "/api/users/{}/following".format(user_b.id),
+            "/api/users/{}/following".format(user_b.username),
             format='json')
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn("This user is not following anyone", str(res.data))
@@ -238,7 +242,7 @@ class ProfileApiTestCase(UserBaseTestCase):
         """
         user_a = User.objects.all().first()
         res = self.client.get(
-            "/api/users/{}/followers".format(user_a.id),
+            "/api/users/{}/followers".format(user_a.username),
             format='json')
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn("This user is not being followed by anyone",
