@@ -13,6 +13,11 @@ from rest_framework.views import APIView
 from datetime import datetime, timedelta
 import jwt
 import re
+import facebook
+from decouple import config
+import oauth2
+import json
+import urllib.request
 from authors.apps.core.utils.user_management import (
     get_id_from_token,
 )
@@ -45,17 +50,7 @@ def get_data_pipeline(backend, response, *args, **kwargs):  # pragma: no cover
         auth_user = User.objects.get(email=email)
     except(TypeError, ValueError, OverflowError, User.DoesNotExist):
         auth_user = None
-    if auth_user:  # pragma: no cover
-        auth_user.token
-    else:  # pragma: no cover
-        auth_user = User(username=username, email=email)
-        password = User.objects.make_random_password()
-        auth_user.set_password(password)
-        auth_user.save()
-        auth_user.profile = Profile()
-        auth_user.profile.save()
-        auth_user.is_verified = True
-        auth_user.token
+    RegisterReturnUser(auth_user, username, email)
 
 
 class RegistrationAPIView(generics.CreateAPIView):
@@ -154,8 +149,7 @@ class SendEmailPasswordReset(generics.CreateAPIView):
     def post(self, request):
         email = request.data.get('email')
         callback_url = request.data.get('callback_url')
-        
-		
+
         if not User.objects.filter(email=email).exists():
             raise serializers.ValidationError({"error":
                                                "User with that email"
@@ -164,7 +158,7 @@ class SendEmailPasswordReset(generics.CreateAPIView):
 
         if callback_url == None:
             raise serializers.ValidationError({"error":
-			 "Please supply the callback url"}, code=400)
+                                               "Please supply the callback url"}, code=400)
 
         dt = datetime.now()+timedelta(days=1)
         reset_password_token = jwt.encode({'email': email, 'exp': int(
@@ -174,7 +168,7 @@ class SendEmailPasswordReset(generics.CreateAPIView):
             Hi,
             Please click on the link to reset your password,
             {}?{}""".format(callback_url,
-                                                          reset_password_token)
+                            reset_password_token)
         SendEmail.send_email(self, self.mail_subject, self.message, email)
         return Response({"message":
                          "We have sent you an email to reset your password",
@@ -302,3 +296,118 @@ class UnsubscribeNotifications(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.update(current_subscirbe_data, new_subscription)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class FacebookAPIView(generics.CreateAPIView):
+    """
+    Allows social sign using Facebook
+    """
+    permission_classes = (AllowAny,)
+    renderer_classes = (UserJSONRenderer,)
+
+    def create(self, request, access_token):
+
+        try:
+            # we obtain details of the user from the access token
+            graph = facebook.GraphAPI(access_token=access_token)
+            user_info = graph.get_object(
+                id='me',
+                fields='first_name, middle_name,last_name, id, email')
+            email = user_info.get('email')
+            username = user_info.get('first_name') + \
+                ' ' + user_info.get('last_name')
+            print(username)
+        except facebook.GraphAPIError as e:
+            return Response({"error": e.message},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=email)
+        except(TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+        return RegisterReturnUser(user, username, email)
+
+
+class GoogleAPIView(generics.CreateAPIView):
+    """
+    Allows social sign using Google
+    """
+    permission_classes = (AllowAny,)
+    renderer_classes = (UserJSONRenderer,)
+
+    def create(self, request, access_token):
+
+        try:
+            results = urllib.request.urlopen(
+                f"https://www.googleapis.com/oauth2/v1/userinfo?access_token={access_token}").read()
+            user_details = json.loads(results.decode())
+            email = user_details.get('email')
+            username = user_details.get('name')
+        except:
+            return Response({"error": "The Token is Invalid or expired"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=email)
+        except(TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+        return RegisterReturnUser(user, username, email)
+
+
+class TwitterAPIView(generics.CreateAPIView):
+    """
+    Allows social sign using Google
+    """
+    permission_classes = (AllowAny,)
+    # renderer_classes = (UserJSONRenderer,)
+
+    def create(self, request, access_key, access_secret,
+               http_method="GET", post_body=b"", http_headers=None):
+
+        try:
+            url = "https://api.twitter.com/1.1/account/verify_credentials.json?include_email=true"
+            consumer = oauth2.Consumer(key=config(
+                'SOCIAL_AUTH_TWITTER_KEY'),
+                secret=config('SOCIAL_AUTH_TWITTER_SECRET'))
+            token = oauth2.Token(key=access_key, secret=access_secret)
+            client = oauth2.Client(consumer, token)
+            resp, content = client.request(
+                url, method=http_method, body=post_body, headers=http_headers)
+
+            user_details = json.loads(content.decode())
+            email = user_details.get('email')
+            username = user_details.get('screen_name')
+            if email is None or username is None:
+                return Response({"error": "The Token is Invalid or expired"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        except KeyError:
+            return Response({"error": "The Token is Invalid or expired"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = User.objects.get(email=email)
+        except(TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+        return RegisterReturnUser(user, username, email)
+
+
+def RegisterReturnUser(user, username, email):
+    if user:
+        return Response({
+            'email': user.email,
+            'username': user.username,
+            'token': user.token
+        }, status=status.HTTP_200_OK)
+    else:
+        user = User(username=username, email=email)
+        password = User.objects.make_random_password()
+        user.set_password(password)
+        user.save()
+        user.profile = Profile()
+        user.profile.save()
+        user.is_verified = True
+        return Response({
+            'email': user.email,
+            'username': user.username,
+            'token': user.token
+        }, status=status.HTTP_200_OK)
